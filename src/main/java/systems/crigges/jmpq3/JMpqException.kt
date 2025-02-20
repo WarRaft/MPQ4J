@@ -1,35 +1,32 @@
 /*
  * 
  */
-package systems.crigges.jmpq3;
+package systems.crigges.jmpq3
 
-import java.io.IOException;
+import java.io.IOException
 
 /**
  * The Class JMpqException.
  */
-public class JMpqException extends IOException {
-
-    /**
-     * The Constant serialVersionUID.
-     */
-    private static final long serialVersionUID = 1L;
-
+class JMpqException : IOException {
     /**
      * Instantiates a new j mpq exception.
      *
      * @param msg the msg
      */
-    public JMpqException(String msg) {
-        super(msg);
-    }
+    constructor(msg: String?) : super(msg)
 
     /**
      * Instantiates a new j mpq exception.
      *
      * @param t the t
      */
-    JMpqException(Throwable t) {
-        super(t);
+    internal constructor(t: Throwable?) : super(t)
+
+    companion object {
+        /**
+         * The Constant serialVersionUID.
+         */
+        private const val serialVersionUID = 1L
     }
 }

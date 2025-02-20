@@ -1,9 +1,16 @@
-package systems.crigges.jmpq3
+package io.github.warraft.mpq4j
 
 import org.apache.commons.compress.utils.SeekableInMemoryByteChannel
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import systems.crigges.jmpq3.AttributesFile
 import systems.crigges.jmpq3.BlockTable
+import systems.crigges.jmpq3.HashTable
+import systems.crigges.jmpq3.JMpqException
+import systems.crigges.jmpq3.LinkedIdentityHashMap
+import systems.crigges.jmpq3.Listfile
+import systems.crigges.jmpq3.MPQOpenOption
+import systems.crigges.jmpq3.MpqFile
 import systems.crigges.jmpq3.compression.RecompressOptions
 import systems.crigges.jmpq3.security.MPQEncryption
 import systems.crigges.jmpq3.security.MPQHashGenerator
@@ -15,10 +22,16 @@ import java.lang.AutoCloseable
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.MappedByteBuffer
-import java.nio.channels.*
-import java.nio.channels.FileChannel.MapMode
-import java.nio.file.*
-import java.util.*
+import java.nio.channels.FileChannel
+import java.nio.channels.NonWritableChannelException
+import java.nio.channels.ReadableByteChannel
+import java.nio.channels.SeekableByteChannel
+import java.nio.channels.WritableByteChannel
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.nio.file.StandardOpenOption
+import java.util.Collections
 import kotlin.math.min
 
 /**
@@ -37,7 +50,7 @@ import kotlin.math.min
  *
  * For platform independence the implementation is pure Java.
  */
-class JMpqEditor : AutoCloseable {
+class MPQ4J : AutoCloseable {
     private val log: Logger = LoggerFactory.getLogger(this.javaClass.getName())
     private var attributes: AttributesFile? = null
 
@@ -194,7 +207,7 @@ class JMpqEditor : AutoCloseable {
      *
      * @param mpqArchive  path to a MPQ archive file.
      * @param openOptions options to use when opening the archive.
-     * @throws JMpqException if mpq is damaged or not supported.
+     * @throws systems.crigges.jmpq3.JMpqException if mpq is damaged or not supported.
      */
     constructor(mpqArchive: Path, vararg openOptions: MPQOpenOption?) {
         // process open options
@@ -943,7 +956,7 @@ class JMpqEditor : AutoCloseable {
                     readFully(buf, fc)
                     buf.rewind()
                     val f = MpqFile(buf, b, discBlockSize, existingName)
-                    val fileWriter = writeChannel.map(MapMode.READ_WRITE, currentPos, b.compressedSize.toLong())
+                    val fileWriter = writeChannel.map(FileChannel.MapMode.READ_WRITE, currentPos, b.compressedSize.toLong())
                     val newBlock = BlockTable.Block(currentPos - (if (keepHeaderOffset) headerOffset else 0), 0, 0, b.flags)
                     newBlocks.add(newBlock)
                     f.writeFileAndBlock(newBlock, fileWriter)
@@ -956,7 +969,7 @@ class JMpqEditor : AutoCloseable {
                 val newFile: ByteBuffer = filenameToData.get(newFileName)!!
                 newFiles.add(newFileName)
                 newFileMap.put(newFileName, newFile)
-                val fileWriter = writeChannel.map(MapMode.READ_WRITE, currentPos, newFile.limit() * 2L)
+                val fileWriter = writeChannel.map(FileChannel.MapMode.READ_WRITE, currentPos, newFile.limit() * 2L)
                 val newBlock = BlockTable.Block(currentPos - (if (keepHeaderOffset) headerOffset else 0), 0, 0, 0)
                 newBlocks.add(newBlock)
                 MpqFile.writeFileAndBlock(newFile.array(), newBlock, fileWriter, newDiscBlockSize, options)
@@ -968,7 +981,7 @@ class JMpqEditor : AutoCloseable {
                 // Add listfile
                 newFiles.add("(listfile)")
                 val listfileArr = listFile!!.asByteArray()
-                val fileWriter = writeChannel.map(MapMode.READ_WRITE, currentPos, listfileArr.size * 2L)
+                val fileWriter = writeChannel.map(FileChannel.MapMode.READ_WRITE, currentPos, listfileArr.size * 2L)
                 val newBlock = BlockTable.Block(currentPos - (if (keepHeaderOffset) headerOffset else 0), 0, 0, MpqFile.EXISTS or MpqFile.COMPRESSED or MpqFile.ENCRYPTED or MpqFile.ADJUSTED_ENCRYPTED)
                 newBlocks.add(newBlock)
                 MpqFile.writeFileAndBlock(listfileArr, newBlock, fileWriter, newDiscBlockSize, "(listfile)", options)
@@ -1038,18 +1051,18 @@ class JMpqEditor : AutoCloseable {
             currentPos = writeChannel.position()
 
             // write out block table
-            val blocktableWriter = writeChannel.map(MapMode.READ_WRITE, currentPos, newBlockSize * 16L)
+            val blocktableWriter = writeChannel.map(FileChannel.MapMode.READ_WRITE, currentPos, newBlockSize * 16L)
             blocktableWriter.order(ByteOrder.LITTLE_ENDIAN)
             BlockTable.writeNewBlocktable(newBlocks, newBlockSize, blocktableWriter)
             currentPos += newBlockSize * 16L
 
             newArchiveSize = currentPos + 1 - (if (keepHeaderOffset) headerOffset else 0)
 
-            val headerWriter = writeChannel.map(MapMode.READ_WRITE, (if (keepHeaderOffset) headerOffset else 0L) + 4L, headerSize + 4L)
+            val headerWriter = writeChannel.map(FileChannel.MapMode.READ_WRITE, (if (keepHeaderOffset) headerOffset else 0L) + 4L, headerSize + 4L)
             headerWriter.order(ByteOrder.LITTLE_ENDIAN)
             writeHeader(headerWriter)
 
-            val tempReader = writeChannel.map(MapMode.READ_WRITE, 0, currentPos + 1)
+            val tempReader = writeChannel.map(FileChannel.MapMode.READ_WRITE, 0, currentPos + 1)
             tempReader.position(0)
 
             fc.position(0)
@@ -1061,7 +1074,7 @@ class JMpqEditor : AutoCloseable {
         log.debug("Rebuild complete. Took: " + (t / 1000000) + "ms")
     }
 
-    private fun sortListfileEntries(remainingFiles: ArrayList<String>) {
+    private fun sortListfileEntries(remainingFiles: java.util.ArrayList<String>) {
         // Sort entries to preserve block table order
         remainingFiles.sortWith<String>(Comparator { o1: String?, o2: String? ->
             var pos1 = 999999999
@@ -1152,7 +1165,7 @@ class JMpqEditor : AutoCloseable {
          * @param buffer buffer to fill.
          * @param src    channel to fill from.
          * @throws IOException  if an exception occurs when reading.
-         * @throws EOFException if EoF is encountered before buffer is full or channel is non
+         * @throws java.io.EOFException if EoF is encountered before buffer is full or channel is non
          * blocking.
          */
         @Throws(IOException::class)
