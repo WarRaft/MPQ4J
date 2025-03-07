@@ -3,14 +3,7 @@ package io.github.warraft.mpq4j
 import org.apache.commons.compress.utils.SeekableInMemoryByteChannel
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import systems.crigges.jmpq3.AttributesFile
-import systems.crigges.jmpq3.BlockTable
-import systems.crigges.jmpq3.HashTable
-import systems.crigges.jmpq3.JMpqException
-import systems.crigges.jmpq3.LinkedIdentityHashMap
-import systems.crigges.jmpq3.Listfile
-import systems.crigges.jmpq3.MPQOpenOption
-import systems.crigges.jmpq3.MpqFile
+import systems.crigges.jmpq3.*
 import systems.crigges.jmpq3.compression.RecompressOptions
 import systems.crigges.jmpq3.security.MPQEncryption
 import systems.crigges.jmpq3.security.MPQHashGenerator
@@ -18,39 +11,18 @@ import java.io.EOFException
 import java.io.File
 import java.io.IOException
 import java.io.OutputStream
-import java.lang.AutoCloseable
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.MappedByteBuffer
-import java.nio.channels.FileChannel
-import java.nio.channels.NonWritableChannelException
-import java.nio.channels.ReadableByteChannel
-import java.nio.channels.SeekableByteChannel
-import java.nio.channels.WritableByteChannel
+import java.nio.channels.*
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
-import java.util.Collections
+import java.util.*
 import kotlin.math.min
 
-/**
- * Provides an interface for using MPQ archive files. MPQ archive files contain
- * a virtual file system used by some old games to hold data, primarily those
- * from Blizzard Entertainment.
- *
- *
- * MPQ archives are not intended as a general purpose file system. File access
- * and reading is highly efficient. File manipulation and writing is not
- * efficient and may require rebuilding a large portion of the archive file.
- * Empty directories are not supported. The full contents of the archive might
- * not be discoverable, but such files can still be accessed if their full path
- * is known. File attributes are optional.
- *
- *
- * For platform independence the implementation is pure Java.
- */
-class MPQ4J : AutoCloseable {
+class MPQ4J {
     private val log: Logger = LoggerFactory.getLogger(this.javaClass.getName())
     private var attributes: AttributesFile? = null
 
@@ -373,7 +345,7 @@ class MPQ4J : AutoCloseable {
      */
     @Throws(JMpqException::class)
     private fun checkListfileCompleteness(hiddenFiles: Int) {
-        if (listFile!!.files.size <= blockTable!!.getAllVaildBlocks().size - hiddenFiles) {
+        if (listFile!!.files.size <= blockTable!!.allVaildBlocks.size - hiddenFiles) {
             log.warn("mpq's listfile is incomplete. Blocks without listfile entry will be discarded")
         }
         for (fileName in listFile!!.files) {
@@ -623,6 +595,8 @@ class MPQ4J : AutoCloseable {
         }
         if (hasFile("(listfile)") && listFile != null) {
             for (s in listFile!!.files) {
+                if (s == null) continue
+
                 val normalized = if (File.separatorChar == '\\') s else s.replace("\\", File.separator)
                 log.debug("extracting: $normalized")
                 val temp = File(dest.absolutePath + File.separator + normalized)
@@ -643,11 +617,11 @@ class MPQ4J : AutoCloseable {
             val temp = File(dest.absolutePath + File.separator + "(listfile)")
             extractFile("(listfile)", temp)
         } else {
-            val blocks = blockTable!!.getAllVaildBlocks()
+            val blocks = blockTable!!.allVaildBlocks
             try {
                 var i = 0
                 for (b in blocks) {
-                    if (b.hasFlag(MpqFile.ENCRYPTED)) {
+                    if (b!!.hasFlag(MpqFile.ENCRYPTED)) {
                         continue
                     }
                     val buf = ByteBuffer.allocate(b.compressedSize).order(ByteOrder.LITTLE_ENDIAN)
@@ -672,7 +646,7 @@ class MPQ4J : AutoCloseable {
          * @return the total file count
          * @throws JMpqException the j mpq exception
          */
-        get() = blockTable!!.getAllVaildBlocks().size
+        get() = blockTable!!.allVaildBlocks.size
 
     /**
      * Extracts the specified file out of the mpq to the target location.
@@ -808,10 +782,10 @@ class MPQ4J : AutoCloseable {
          */
         get() {
             val mpqFiles: MutableList<MpqFile?> = ArrayList<MpqFile?>()
-            val list = blockTable!!.getAllVaildBlocks()
+            val list = blockTable!!.allVaildBlocks
             for (block in list) {
                 try {
-                    val mpqFile = getMpqFileByBlock(block)
+                    val mpqFile = getMpqFileByBlock(block!!)
                     mpqFiles.add(mpqFile)
                 } catch (_: IOException) {
                 }
@@ -873,17 +847,14 @@ class MPQ4J : AutoCloseable {
         }
     }
 
-    @Throws(IOException::class)
     fun closeReadOnly() {
         fc.close()
     }
 
-    @Throws(IOException::class)
-    override fun close() {
+    fun close() {
         close(true, true, false)
     }
 
-    @Throws(IOException::class)
     fun close(buildListfile: Boolean, buildAttributes: Boolean, recompress: Boolean) {
         close(buildListfile, buildAttributes, RecompressOptions(recompress))
     }
@@ -893,7 +864,6 @@ class MPQ4J : AutoCloseable {
      * @param buildAttributes whether or not to add a (attributes) file to this mpq
      * @throws IOException
      */
-    @Throws(IOException::class)
     fun close(buildListfile: Boolean, buildAttributes: Boolean, options: RecompressOptions) {
         // only rebuild if allowed
         if (!this.isCanWrite || !fc.isOpen) {
@@ -927,9 +897,9 @@ class MPQ4J : AutoCloseable {
             newDiscBlockSize = if (options.recompress) 512 * (1 shl newSectorSizeShift) else discBlockSize
             calcNewTableSize()
 
-            val newBlocks = ArrayList<BlockTable.Block?>()
-            val newFiles = ArrayList<String?>()
-            val existingFiles = ArrayList<String>(listFile!!.files)
+            val newBlocks = mutableListOf<BlockTable.Block?>()
+            val newFiles = mutableListOf<String?>()
+            val existingFiles = listFile!!.files
 
             sortListfileEntries(existingFiles)
 
@@ -944,6 +914,7 @@ class MPQ4J : AutoCloseable {
             }
 
             for (existingName in existingFiles) {
+                if (existingName == null) continue
                 if (options.recompress && !existingName.endsWith(".wav")) {
                     val extracted = ByteBuffer.wrap(extractFileAsBytes(existingName))
                     filenameToData.put(existingName, extracted)
@@ -981,7 +952,7 @@ class MPQ4J : AutoCloseable {
                 // Add listfile
                 newFiles.add("(listfile)")
                 val listfileArr = listFile!!.asByteArray()
-                val fileWriter = writeChannel.map(FileChannel.MapMode.READ_WRITE, currentPos, listfileArr.size * 2L)
+                val fileWriter = writeChannel.map(FileChannel.MapMode.READ_WRITE, currentPos, listfileArr!!.size * 2L)
                 val newBlock = BlockTable.Block(currentPos - (if (keepHeaderOffset) headerOffset else 0), 0, 0, MpqFile.EXISTS or MpqFile.COMPRESSED or MpqFile.ENCRYPTED or MpqFile.ADJUSTED_ENCRYPTED)
                 newBlocks.add(newBlock)
                 MpqFile.writeFileAndBlock(listfileArr, newBlock, fileWriter, newDiscBlockSize, "(listfile)", options)
@@ -1074,9 +1045,11 @@ class MPQ4J : AutoCloseable {
         log.debug("Rebuild complete. Took: " + (t / 1000000) + "ms")
     }
 
-    private fun sortListfileEntries(remainingFiles: java.util.ArrayList<String>) {
+    private fun sortListfileEntries(remainingFiles: MutableList<String?>?) {
+        if (remainingFiles == null) return
+
         // Sort entries to preserve block table order
-        remainingFiles.sortWith<String>(Comparator { o1: String?, o2: String? ->
+        remainingFiles.sortWith<String?>(Comparator { o1: String?, o2: String? ->
             var pos1 = 999999999
             var pos2 = 999999999
             try {

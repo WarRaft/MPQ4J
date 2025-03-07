@@ -1,19 +1,18 @@
-package systems.crigges.jmpq3test;
+package systems.crigges.jmpq3test
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
-import systems.crigges.jmpq3.DebugHelper;
+import org.testng.Assert
+import org.testng.annotations.Test
+import systems.crigges.jmpq3.DebugHelper
 
 /**
  * Created by Frotty on 09.03.2017.
  */
-public class DegugHelperTests {
-
+class DegugHelperTests {
     @Test
-    public void testDebugHelper() {
-        Assert.assertTrue(DebugHelper.bytesToHex(new byte[]{0}).equalsIgnoreCase("00"));
-        Assert.assertTrue(DebugHelper.bytesToHex(new byte[]{1}).equalsIgnoreCase("01"));
-        Assert.assertTrue(DebugHelper.bytesToHex(new byte[]{10}).equalsIgnoreCase("0A"));
-        Assert.assertTrue(DebugHelper.bytesToHex(new byte[]{16}).equalsIgnoreCase("10"));
+    fun testDebugHelper() {
+        Assert.assertTrue(DebugHelper.bytesToHex(byteArrayOf(0)).equals("00", ignoreCase = true))
+        Assert.assertTrue(DebugHelper.bytesToHex(byteArrayOf(1)).equals("01", ignoreCase = true))
+        Assert.assertTrue(DebugHelper.bytesToHex(byteArrayOf(10)).equals("0A", ignoreCase = true))
+        Assert.assertTrue(DebugHelper.bytesToHex(byteArrayOf(16)).equals("10", ignoreCase = true))
     }
 }
