@@ -128,16 +128,19 @@ public class Exploder {
     public static void pkexplode(byte[] pInBuffer, byte[] pOutBuffer, int inPos) {
         // Compressed data cannot be less than 4 bytes;
         // this is not possible in any case whatsoever
-        if (pInBuffer.length < 4)
+        if (pInBuffer.length < 4) {
             throw new IllegalArgumentException("PK_ERR_INCOMPLETE_INPUT: Incomplete input");
+        }
 
         int pOutPos = 0;
         // This is 1 because in an mpq-sector, the first byte is the compression type flag
         int pInPos = inPos;
 
         // Get header from compressed data
-        byte nLitSize = pInBuffer[pInPos++];
-        byte nDictSizeByte = pInBuffer[pInPos++];
+        byte nLitSize = pInBuffer[pInPos];
+        pInPos++;
+        byte nDictSizeByte = pInBuffer[pInPos];
+        pInPos++;
 
         // Check for a valid compression type
         if (nLitSize != 0 && nLitSize != 1)
@@ -148,23 +151,23 @@ public class Exploder {
         if (4 > nDictSizeByte || nDictSizeByte > 6)
             throw new IllegalArgumentException("PK_ERR_BAD_DATA: Invalid DictSizeByte: " + nDictSizeByte);
 
-        // Store actual dictionary size
         int nDictSize = 64 << nDictSizeByte;
 
-        // Initialize dictionary position
-        byte[] Dict = new byte[0x1000]; // Sliding dictionary used for compression and decompression
+        byte[] Dict = new byte[0x1000];
         int pDictPos = 0;
-
-        // Initialize current dictionary size to zero
         int nCurDictSize = 0;
 
         // Get first 16 bits
-        byte nBits; // Number of bits in bit buffer
-        long nBitBuffer; // Stores bits until there are enough to output a byte of data
 
-        nBitBuffer = pInBuffer[pInPos++] & 0xFFL;
-        nBitBuffer += (pInBuffer[pInPos++] & 0xFFL) << 8;
-        nBits = 16;
+        // Stores bits until there are enough to output a byte of data
+
+        long nBitBuffer = (pInBuffer[pInPos] & 0xFFL);
+        pInPos++;
+        nBitBuffer += ((pInBuffer[pInPos] & 0xFFL) << 8);
+        pInPos++;
+
+        // Number of bits in bit buffer
+        byte nBits = 16;
 
         // Decompress until output buffer is full
         int i; // Index into tables
@@ -180,7 +183,8 @@ public class Exploder {
                     throw new IllegalArgumentException("PK_ERR_INCOMPLETE_INPUT: Incomplete input");
                 }
 
-                nBitBuffer += (long) (pInBuffer[pInPos++] & 0xFF) << nBits;
+                nBitBuffer += ((long) (pInBuffer[pInPos] & 0xFF)) << nBits;
+                pInPos++;
                 nBits += 8;
             }
 
@@ -221,7 +225,8 @@ public class Exploder {
                         throw new IllegalArgumentException("PK_ERR_INCOMPLETE_INPUT: Incomplete input");
                     }
 
-                    nBitBuffer += (long) (pInBuffer[pInPos++] & 0xFF) << nBits;
+                    nBitBuffer += (long) (pInBuffer[pInPos] & 0xFF) << nBits;
+                    pInPos++;
                     nBits += 8;
                 }
 
@@ -274,7 +279,10 @@ public class Exploder {
 
                     // Copy the byte from the dictionary and add it to the end of the dictionary
                     // *pDictPos++ = *pOutPos++ = *pCopyOffs++;
-                    Dict[pDictPos++] = pOutBuffer[pOutPos++] = Dict[pCopyOffs++];
+                    Dict[pDictPos] = pOutBuffer[pOutPos] = Dict[pCopyOffs];
+                    pCopyOffs++;
+                    pOutPos++;
+                    pDictPos++;
 
                     // If the dictionary is not full yet, increment the current dictionary size
                     if (nCurDictSize < nDictSize)
@@ -295,7 +303,8 @@ public class Exploder {
 
                     // Copy the byte and add it to the end of the dictionary
                     // *pDictPos++ = *pOutPos++ = (byte)(nBitBuffer >> 1);
-                    Dict[pDictPos++] = pOutBuffer[pOutPos++] = (byte) (nBitBuffer >> 1);
+                    Dict[pDictPos] = pOutBuffer[pOutPos++] = (byte) (nBitBuffer >> 1);
+                    pDictPos++;
 
                     // Remove the byte from the bit buffer
                     nBitBuffer >>= 9;
@@ -317,7 +326,9 @@ public class Exploder {
 
                     // Copy the byte and add it to the end of the dictionary
                     // *pDictPos++ = *pOutPos++ = (byte)i;
-                    Dict[pDictPos++] = pOutBuffer[pOutPos++] = (byte) i;
+                    Dict[pDictPos] = pOutBuffer[pOutPos] = (byte) i;
+                    pOutPos++;
+                    pDictPos++;
 
                     // Remove the byte from the bit buffer
                     nBitBuffer >>= ChBits[i] & 0xFF;
