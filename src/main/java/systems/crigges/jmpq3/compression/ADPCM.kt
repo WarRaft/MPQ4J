@@ -1,21 +1,122 @@
-package systems.crigges.jmpq3.compression;
+package systems.crigges.jmpq3.compression
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import kotlin.math.max
+import kotlin.math.min
 
-public class ADPCM {
-    private static final byte INITIAL_ADPCM_STEP_INDEX = 0x2C;
+class ADPCM(channelmax: Int) {
+    private class Channel {
+        var sampleValue: Short = 0
+        var stepIndex: Byte = 0
+    }
 
-    private static final byte[] CHANGE_TABLE =
-        {
+    private val state: Array<Channel?>
+
+    init {
+        state = arrayOfNulls<Channel>(channelmax)
+        var i = 0
+        while (i < state.size) {
+            state[i] = Channel()
+            i += 1
+        }
+    }
+
+    fun decompress(`in`: ByteBuffer, out: ByteBuffer, channeln: Int) {
+        // prepare buffers
+        `in`.order(ByteOrder.LITTLE_ENDIAN)
+        out.order(ByteOrder.LITTLE_ENDIAN)
+
+        val stepshift = (`in`.getShort().toInt() ushr 8).toByte()
+
+        // initialize channels
+        var i = 0
+        while (i < channeln) {
+            val chan = state[i]
+            if (chan != null) {
+                chan.stepIndex = INITIAL_ADPCM_STEP_INDEX
+                chan.sampleValue = `in`.getShort()
+                out.putShort(chan.sampleValue)
+            }
+            i += 1
+        }
+
+        var current = 0
+
+        // decompress
+        while (`in`.hasRemaining()) {
+            val op = `in`.get()
+            val chan = state[current]
+            if (chan == null) continue
+
+            if ((op.toInt() and 0x80) != 0) {
+                when (op.toInt() and 0x7F) {
+                    0 -> {
+                        if (chan.stepIndex.toInt() != 0) chan.stepIndex = (chan.stepIndex - 1).toByte()
+                        out.putShort(chan.sampleValue)
+                        current = (current + 1) % channeln
+                    }
+
+                    1 -> {
+                        chan.stepIndex = (chan.stepIndex + 8).toByte()
+                        if (chan.stepIndex >= STEP_TABLE.size) chan.stepIndex = (STEP_TABLE.size - 1).toByte()
+                    }
+
+                    2 -> current = (current + 1) % channeln
+                    else -> {
+                        chan.stepIndex = (chan.stepIndex - 8).toByte()
+                        if (chan.stepIndex < 0) chan.stepIndex = 0
+                    }
+                }
+            } else {
+                // adjust value
+                val stepbase: Short = STEP_TABLE[chan.stepIndex.toInt()]
+                var step = (stepbase.toInt() ushr stepshift.toInt()).toShort()
+                var i = 0
+                while (i < 6) {
+                    if (((op.toInt() and 0xff) and (1 shl i)) != 0) step =
+                        (step + (stepbase.toInt() shr i)).toShort()
+                    i += 1
+                }
+
+                if ((op.toInt() and 0x40) != 0) {
+                    chan.sampleValue =
+                        max(
+                            (chan.sampleValue.toInt() - step).toDouble(),
+                            Short.Companion.MIN_VALUE.toDouble()
+                        ).toInt()
+                            .toShort()
+                } else {
+                    chan.sampleValue =
+                        min(
+                            (chan.sampleValue.toInt() + step).toDouble(),
+                            Short.Companion.MAX_VALUE.toDouble()
+                        ).toInt()
+                            .toShort()
+                }
+
+                out.putShort(chan.sampleValue)
+
+                chan.stepIndex = (chan.stepIndex + CHANGE_TABLE[op.toInt() and 0x1F]).toByte()
+                if (chan.stepIndex < 0) chan.stepIndex = 0
+                else if (chan.stepIndex >= STEP_TABLE.size) chan.stepIndex = (STEP_TABLE.size - 1).toByte()
+
+                current = (current + 1) % channeln
+            }
+        }
+    }
+
+    companion object {
+        private const val INITIAL_ADPCM_STEP_INDEX: Byte = 0x2C
+
+        private val CHANGE_TABLE = byteArrayOf(
             -1, 0, -1, 4, -1, 2, -1, 6,
             -1, 1, -1, 5, -1, 3, -1, 7,
             -1, 1, -1, 5, -1, 3, -1, 7,
             -1, 2, -1, 4, -1, 6, -1, 8
-        };
+        )
 
-    private static final short[] STEP_TABLE =
-        {
+        private val STEP_TABLE = shortArrayOf(
             7, 8, 9, 10, 11, 12, 13, 14,
             16, 17, 19, 21, 23, 25, 28, 31,
             34, 37, 41, 45, 50, 55, 60, 66,
@@ -28,94 +129,6 @@ public class ADPCM {
             7132, 7845, 8630, 9493, 10442, 11487, 12635, 13899,
             15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794,
             32767
-        };
-
-    private static class Channel {
-        public short sampleValue;
-        public byte stepIndex;
-    }
-
-    private final Channel[] state;
-
-    public ADPCM(int channelmax) {
-        state = new Channel[channelmax];
-        for (int i = 0; i < state.length; i += 1) state[i] = new Channel();
-    }
-
-    public void decompress(ByteBuffer in, ByteBuffer out, int channeln) {
-        // prepare buffers
-        in.order(ByteOrder.LITTLE_ENDIAN);
-        out.order(ByteOrder.LITTLE_ENDIAN);
-
-        byte stepshift = (byte) (in.getShort() >>> 8);
-
-        // initialize channels
-        for (int i = 0; i < channeln; i += 1) {
-            Channel chan = state[i];
-            chan.stepIndex = INITIAL_ADPCM_STEP_INDEX;
-            chan.sampleValue = in.getShort();
-            out.putShort(chan.sampleValue);
-        }
-
-        int current = 0;
-
-        // decompress
-        while (in.hasRemaining()) {
-            final byte op = in.get();
-            final Channel chan = state[current];
-
-            if ((op & 0x80) != 0) {
-                switch (op & 0x7F) {
-                    // write current value
-                    case 0:
-                        if (chan.stepIndex != 0)
-                            chan.stepIndex -= 1;
-                        out.putShort(chan.sampleValue);
-                        current = (current + 1) % channeln;
-                        break;
-                    // increment period
-                    case 1:
-                        chan.stepIndex += 8;
-                        if (chan.stepIndex >= STEP_TABLE.length)
-                            chan.stepIndex = (byte) (STEP_TABLE.length - 1);
-                        break;
-                    // skip channel (unused?)
-                    case 2:
-                        current = (current + 1) % channeln;
-                        break;
-
-                    // all other values (unused?)
-                    default:
-                        chan.stepIndex -= 8;
-                        if (chan.stepIndex < 0)
-                            chan.stepIndex = 0;
-                        break;
-                }
-            } else {
-                // adjust value
-                short stepbase = STEP_TABLE[chan.stepIndex];
-                short step = (short) (stepbase >>> stepshift);
-                for (int i = 0; i < 6; i += 1) {
-                    if (((op & 0xff) & 1 << i) != 0)
-                        step += stepbase >> i;
-                }
-
-                if ((op & 0x40) != 0) {
-                    chan.sampleValue = (short) Math.max((int) chan.sampleValue - step, Short.MIN_VALUE);
-                } else {
-                    chan.sampleValue = (short) Math.min((int) chan.sampleValue + step, Short.MAX_VALUE);
-                }
-
-                out.putShort(chan.sampleValue);
-
-                chan.stepIndex += CHANGE_TABLE[op & 0x1F];
-                if (chan.stepIndex < 0)
-                    chan.stepIndex = 0;
-                else if (chan.stepIndex >= STEP_TABLE.length)
-                    chan.stepIndex = (byte) (STEP_TABLE.length - 1);
-
-                current = (current + 1) % channeln;
-            }
-        }
+        )
     }
 }
