@@ -1,11 +1,6 @@
 package io.github.warraft.mpq4j.compression
 
-import io.github.warraft.mpq4j.compression.ADPCM
 import systems.crigges.jmpq3.compression.Exploder
-import io.github.warraft.mpq4j.compression.Huffman
-import io.github.warraft.mpq4j.compression.JzLibHelper
-import io.github.warraft.mpq4j.compression.RecompressOptions
-import io.github.warraft.mpq4j.compression.ZopfliHelper
 import java.nio.ByteBuffer
 
 /**
@@ -25,7 +20,7 @@ object CompressionUtil {
     private const val FLAG_BZIP2: Byte = 0x10
     private const val FLAG_SPARSE: Byte = 0x20
     private const val FLAG_ADPCM1C: Byte = 0x40
-    private val FLAG_ADPCM2C: Byte = -0x80
+    private const val FLAG_ADPCM2C: Byte = -0x80
     private const val FLAG_LMZA: Byte = 0x12
 
     fun compress(temp: ByteArray, recompress: RecompressOptions): ByteArray? {

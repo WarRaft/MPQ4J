@@ -38,13 +38,15 @@ public class Exploder {
         pInPos++;
 
         // Check for a valid compression type
-        if (nLitSize != 0 && nLitSize != 1)
+        if (nLitSize != 0 && nLitSize != 1) {
             throw new IllegalArgumentException("PK_ERR_BAD_DATA: Invalid LitSize: " + nLitSize);
+        }
 
         // Only dictionary sizes of 1024, 2048, and 4096 are allowed.
         // The values 4, 5, and 6 correspond with those sizes
-        if (4 > nDictSizeByte || nDictSizeByte > 6)
+        if (4 > nDictSizeByte || nDictSizeByte > 6) {
             throw new IllegalArgumentException("PK_ERR_BAD_DATA: Invalid DictSizeByte: " + nDictSizeByte);
+        }
 
         int nDictSize = 64 << nDictSizeByte;
 
@@ -83,8 +85,9 @@ public class Exploder {
                 nBits += 8;
             }
 
-            // First bit is 1; copy from dictionary
+
             if ((nBitBuffer & 1) != 0) {
+                // First bit is 1; copy from dictionary
 
                 // Remove first bit from bit buffer
                 nBitBuffer >>= 1;
@@ -92,8 +95,9 @@ public class Exploder {
 
                 // Find the base value for the copy length
                 for (i = 0; i <= 0x0F; i++) {
-                    if (TRUNCATE_VALUE(nBitBuffer, LenBits[i] & 0xFF) == (LenCode[i] & 0xFF))
+                    if (TRUNCATE_VALUE(nBitBuffer, LenBits[i] & 0xFF) == (LenCode[i] & 0xFF)) {
                         break;
+                    }
                 }
 
                 // Remove value from bit buffer
@@ -108,8 +112,9 @@ public class Exploder {
                 nBits -= (byte) (ExLenBits[i] & 0xFF);
 
                 // If copy length is 519, the end of the stream has been reached
-                if (nCopyLen == 519)
+                if (nCopyLen == 519) {
                     break;
+                }
 
                 // Fill bit buffer with at least 14 bits
                 while (nBits < 14) {
@@ -126,9 +131,10 @@ public class Exploder {
                 }
 
                 // Find most significant 6 bits of offset into the dictionary
-                for (i = 0; i <= 0x3F; i++) {
-                    if (TRUNCATE_VALUE(nBitBuffer, OffsBits[i] & 0xFF) == (OffsCode[i] & 0xFF))
+                for (i = 0; i <= 63; i++) {
+                    if (TRUNCATE_VALUE(nBitBuffer, OffsBits[i] & 0xFF) == (OffsCode[i] & 0xFF)) {
                         break;
+                    }
                 }
 
                 // Remove value from bit buffer
@@ -162,15 +168,18 @@ public class Exploder {
                     nCopyLen--;
 
                     // If output buffer has become full, stop immediately!
-                    if (pOutPos >= pOutBuffer.length)
+                    if (pOutPos >= pOutBuffer.length) {
                         throw new IllegalArgumentException("PK_ERR_BUFFER_TOO_SMALL: Output buffer is full: " + pOutPos + " / " + pOutBuffer.length);
+                    }
 
 
                     // Check whether the offset is a valid one into the dictionary
-                    while (pCopyOffs < 0)
+                    while (pCopyOffs < 0) {
                         pCopyOffs += nCurDictSize;
-                    while (pCopyOffs >= nCurDictSize)
+                    }
+                    while (pCopyOffs >= nCurDictSize) {
                         pCopyOffs -= nCurDictSize;
+                    }
 
                     // Copy the byte from the dictionary and add it to the end of the dictionary
                     // *pDictPos++ = *pOutPos++ = *pCopyOffs++;
@@ -180,18 +189,18 @@ public class Exploder {
                     pDictPos++;
 
                     // If the dictionary is not full yet, increment the current dictionary size
-                    if (nCurDictSize < nDictSize)
+                    if (nCurDictSize < nDictSize) {
                         nCurDictSize++;
+                    }
 
                     // If the current end of the dictionary is past the end of the buffer,
                     // wrap around back to the start
-                    if (pDictPos >= nDictSize)
+                    if (pDictPos >= nDictSize) {
                         pDictPos = 0;
+                    }
                 }
-            }
-
-            // First bit is 0; literal byte
-            else {
+            } else {
+                // First bit is 0; literal byte
 
                 // Fixed size literal byte
                 if (nLitSize == 0) {
@@ -215,8 +224,9 @@ public class Exploder {
 
                     // Find the actual byte from the bit sequence
                     for (i = 0; i <= 0xFF; i++) {
-                        if (TRUNCATE_VALUE(nBitBuffer, ChBits[i] & 0xFF) == (ChCode[i] & 0xFFFF))
+                        if (TRUNCATE_VALUE(nBitBuffer, ChBits[i] & 0xFF) == (ChCode[i] & 0xFFFF)) {
                             break;
+                        }
                     }
 
                     // Copy the byte and add it to the end of the dictionary
@@ -231,13 +241,15 @@ public class Exploder {
                 }
 
                 // If the dictionary is not full yet, increment the current dictionary size
-                if (nCurDictSize < nDictSize)
+                if (nCurDictSize < nDictSize) {
                     nCurDictSize++;
+                }
 
                 // If the current end of the dictionary is past the end of the buffer,
                 // wrap around back to the start
-                if (pDictPos >= nDictSize)
+                if (pDictPos >= nDictSize) {
                     pDictPos = 0;
+                }
             }
         }
 
