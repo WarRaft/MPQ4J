@@ -1,12 +1,10 @@
-package systems.crigges.jmpq3.compression;
+package systems.crigges.jmpq3.compression
 
-public class RecompressOptions {
-    public boolean recompress;
-    public boolean useZopfli = false;
-    public int iterations = 16;
-    public int newSectorSizeShift = 3;
+class RecompressOptions(@JvmField var recompress: Boolean) {
+    @JvmField
+    var useZopfli: Boolean = false
 
-    public RecompressOptions(boolean recompress) {
-        this.recompress = recompress;
-    }
+    @JvmField
+    var iterations: Int = 16
+    var newSectorSizeShift: Int = 3
 }

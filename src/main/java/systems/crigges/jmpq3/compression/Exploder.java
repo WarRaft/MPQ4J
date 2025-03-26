@@ -44,7 +44,7 @@ public class Exploder {
     private static final int PK_LITERAL_SIZE_FIXED = 0; // Use fixed size literal bytes, used for binary data
     private static final int PK_LITERAL_SIZE_VARIABLE = 1; // Use variable size literal bytes, used for text
 
-    private static long TRUNCATE_VALUE(long value, int bits)  {
+    private static long TRUNCATE_VALUE(long value, int bits) {
         return ((value) & ((1L << (bits)) - 1));
     }
 
@@ -150,7 +150,7 @@ public class Exploder {
                     0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08
             };
 
-    public static int pkexplode(byte[] pInBuffer, byte[] pOutBuffer, int inPos) {
+    public static void pkexplode(byte[] pInBuffer, byte[] pOutBuffer, int inPos) {
         // Compressed data cannot be less than 4 bytes;
         // this is not possible in any case whatsoever
         if (pInBuffer.length < 4)
@@ -224,14 +224,14 @@ public class Exploder {
 
                 // Remove value from bit buffer
                 nBitBuffer >>= LenBits[i] & 0xFF;
-                nBits -= LenBits[i] & 0xFF;
+                nBits -= (byte) (LenBits[i] & 0xFF);
 
                 // Store the copy length
                 nCopyLen = (int) ((LenBase[i] & 0xFFFF) + TRUNCATE_VALUE(nBitBuffer, ExLenBits[i] & 0xFF)); // Length of data to copy from the dictionary
 
                 // Remove the extra bits from the bit buffer
                 nBitBuffer >>= ExLenBits[i] & 0xFF;
-                nBits -= ExLenBits[i] & 0xFF;
+                nBits -= (byte) (ExLenBits[i] & 0xFF);
 
                 // If copy length is 519, the end of the stream has been reached
                 if (nCopyLen == 519)
@@ -258,7 +258,7 @@ public class Exploder {
 
                 // Remove value from bit buffer
                 nBitBuffer >>= OffsBits[i] & 0xFF;
-                nBits -= OffsBits[i] & 0xFF;
+                nBits -= (byte) (OffsBits[i] & 0xFF);
 
                 // If the copy length is 2, there are only two more bits in the dictionary
                 // offset; otherwise, there are 4, 5, or 6 bits left, depending on what
@@ -345,7 +345,7 @@ public class Exploder {
 
                     // Remove the byte from the bit buffer
                     nBitBuffer >>= ChBits[i] & 0xFF;
-                    nBits -= ChBits[i] & 0xFF;
+                    nBits -= (byte) (ChBits[i] & 0xFF);
                 }
 
                 // If the dictionary is not full yet, increment the current dictionary size
@@ -359,7 +359,6 @@ public class Exploder {
             }
         }
 
-        return pOutPos;
     }
 
 }

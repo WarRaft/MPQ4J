@@ -1,69 +1,70 @@
-package systems.crigges.jmpq3.compression;
+package systems.crigges.jmpq3.compression
 
-import com.jcraft.jzlib.Deflater;
-import com.jcraft.jzlib.GZIPException;
-import com.jcraft.jzlib.Inflater;
+import com.jcraft.jzlib.Deflater
+import com.jcraft.jzlib.GZIPException
+import com.jcraft.jzlib.Inflater
 
-public class JzLibHelper {
-    private static final Inflater inf = new Inflater();
+object JzLibHelper {
+    private val inf = Inflater()
 
-    private static int defLvl = 0;
-    private static Deflater def = null;
+    private var defLvl = 0
+    private var def: Deflater? = null
 
-    public static byte[] inflate(byte[] bytes, int offset, int uncompSize) {
-        byte[] uncomp = new byte[uncompSize];
-        inf.init();
-        inf.setInput(bytes, offset, bytes.length - 1, false);
-        inf.setOutput(uncomp);
-        while ((inf.total_out < uncompSize) && (inf.total_in < bytes.length)) {
-            inf.avail_in = (inf.avail_out = 1);
-            int err = inf.inflate(0);
-            if (err == 1)
-                break;
+    @JvmStatic
+    fun inflate(bytes: ByteArray, offset: Int, uncompSize: Int): ByteArray {
+        val uncomp = ByteArray(uncompSize)
+        inf.init()
+        inf.setInput(bytes, offset, bytes.size - 1, false)
+        inf.setOutput(uncomp)
+        while ((inf.total_out < uncompSize) && (inf.total_in < bytes.size)) {
+            inf.avail_in = (1.also { inf.avail_out = it })
+            val err = inf.inflate(0)
+            if (err == 1) break
         }
-        inf.end();
-        return uncomp;
+        inf.end()
+        return uncomp
     }
 
-    static byte[] comp = new byte[1024];
+    var comp: ByteArray = ByteArray(1024)
 
-    public static byte[] deflate(byte[] bytes, boolean strongDeflate) {
-        boolean created = tryCreateDeflater(strongDeflate ? 9 : 1);
+    @JvmStatic
+    fun deflate(bytes: ByteArray, strongDeflate: Boolean): ByteArray {
+        val created = tryCreateDeflater(if (strongDeflate) 9 else 1)
 
-        if (comp.length < bytes.length) {
-            comp = new byte[bytes.length];
+        if (comp.size < bytes.size) {
+            comp = ByteArray(bytes.size)
         }
         if (!created) {
-            def.init(strongDeflate ? 9 : 1);
+            def!!.init(if (strongDeflate) 9 else 1)
         }
-        def.setInput(bytes);
-        def.setOutput(comp);
-        while ((def.total_in != bytes.length) && (def.total_out < bytes.length)) {
-            def.avail_in = (def.avail_out = 1);
-            def.deflate(0);
+        def!!.setInput(bytes)
+        def!!.setOutput(comp)
+        while ((def!!.total_in != bytes.size.toLong()) && (def!!.total_out < bytes.size)) {
+            def!!.avail_in = (1.also { def!!.avail_out = it })
+            def!!.deflate(0)
         }
-        int err;
+        var err: Int
         do {
-            def.avail_out = 1;
-            err = def.deflate(4);
-        } while (err != 1);
+            def!!.avail_out = 1
+            err = def!!.deflate(4)
+        } while (err != 1)
 
-        byte[] temp = new byte[(int) def.getTotalOut()];
-        System.arraycopy(comp, 0, temp, 0, (int) def.getTotalOut());
-        def.end();
-        return temp;
+        val temp = ByteArray(def!!.getTotalOut().toInt())
+        System.arraycopy(comp, 0, temp, 0, def!!.getTotalOut().toInt())
+        def!!.end()
+        return temp
     }
 
-    private static boolean tryCreateDeflater(int lvl) {
+    private fun tryCreateDeflater(lvl: Int): Boolean {
         if (def == null || lvl != defLvl) {
             try {
-                def = new Deflater(lvl);
-                defLvl = lvl;
-                return true;
-            } catch (GZIPException e) {
-                throw new RuntimeException(e);
+                def = Deflater(lvl)
+                defLvl = lvl
+                return true
+            } catch (e: GZIPException) {
+                throw RuntimeException(e)
             }
         }
-        return false;
+        return false
     }
 }
