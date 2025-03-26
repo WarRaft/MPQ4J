@@ -1,6 +1,5 @@
 package io.github.warraft.mpq4j
 
-import io.github.warraft.mpq4j.MpqFile
 import io.github.warraft.mpq4j.security.MPQEncryption
 import java.io.IOException
 import java.nio.BufferOverflowException
@@ -9,13 +8,10 @@ import java.nio.ByteOrder
 import java.nio.MappedByteBuffer
 
 class BlockTable(buf: ByteBuffer) {
-    private val blockMap: ByteBuffer
-    private val size: Int
+    private val blockMap: ByteBuffer = ByteBuffer.allocate(buf.capacity())
+    private val size: Int = (buf.capacity() / 16)
 
     init {
-        this.size = (buf.capacity() / 16)
-
-        blockMap = ByteBuffer.allocate(buf.capacity())
         MPQEncryption(-326913117, true).processFinal(buf, blockMap)
         this.blockMap.order(ByteOrder.LITTLE_ENDIAN)
     }

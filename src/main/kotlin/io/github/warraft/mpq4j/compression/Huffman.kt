@@ -207,16 +207,15 @@ internal class Huffman {
             node.probability += 1
 
             val test2 = sorted2.ceilingEntry(node.probability)
-            val where: Node?
-            if (test2 != null) where = test2.value!!.next
-            else where = root
+            val wher = if (test2 != null) test2.value!!.next
+            else root
 
-            if (where !== node) {
-                node.listSwap(where!!)
-                node.treeSwap(where)
+            if (wher !== node) {
+                node.listSwap(wher!!)
+                node.treeSwap(wher)
 
-                if (where.probability != where.next!!.probability) {
-                    sorted2.put(where.probability, where)
+                if (wher.probability != wher.next!!.probability) {
+                    sorted2.put(wher.probability, wher)
                 }
             }
             sorted2.put(node.probability, node)
@@ -269,7 +268,7 @@ internal class Huffman {
         root!!.parent = null
     }
 
-    fun Decompress(`in`: ByteBuffer, out: ByteBuffer) {
+    fun decompress(`in`: ByteBuffer, out: ByteBuffer) {
         setSource(`in`)
         val type = getBits(8).toByte()
         buildTree(type)

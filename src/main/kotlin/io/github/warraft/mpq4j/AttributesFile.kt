@@ -1,7 +1,5 @@
 package io.github.warraft.mpq4j
 
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.IOException
 import java.nio.ByteBuffer
@@ -10,7 +8,6 @@ import java.nio.file.Files
 import java.util.zip.CRC32
 
 class AttributesFile {
-    private val log: Logger = LoggerFactory.getLogger(this.javaClass.getName())
     val file: ByteArray
 
     val crc32: IntArray
@@ -41,7 +38,6 @@ class AttributesFile {
         for (i in 0..<fileCount) {
             timestamps[i] = buffer.getLong()
         }
-        log.debug("parsed attributes")
     }
 
     fun setEntry(i: Int, crc: Int, timestamp: Long) {
@@ -78,7 +74,7 @@ class AttributesFile {
         return refMap.getOrDefault(name, -1)!!
     }
 
-    @Throws(IOException::class)
+    
     private fun getCrc32(file: File): Int {
         return getCrc32(Files.readAllBytes(file.toPath()))
     }
@@ -86,6 +82,6 @@ class AttributesFile {
     fun getCrc32(bytes: ByteArray?): Int {
         crcGen.reset()
         crcGen.update(bytes)
-        return crcGen.getValue().toInt()
+        return crcGen.value.toInt()
     }
 }

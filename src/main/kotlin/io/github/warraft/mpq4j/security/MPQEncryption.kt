@@ -1,6 +1,5 @@
 package io.github.warraft.mpq4j.security
 
-import io.github.warraft.mpq4j.security.CryptographicLUT
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import kotlin.math.min

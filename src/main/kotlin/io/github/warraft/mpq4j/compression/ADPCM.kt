@@ -11,10 +11,9 @@ class ADPCM(channelmax: Int) {
         var stepIndex: Byte = 0
     }
 
-    private val state: Array<Channel?>
+    private val state: Array<Channel?> = arrayOfNulls<Channel>(channelmax)
 
     init {
-        state = arrayOfNulls<Channel>(channelmax)
         var i = 0
         while (i < state.size) {
             state[i] = Channel()

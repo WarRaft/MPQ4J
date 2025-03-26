@@ -1,6 +1,5 @@
 package io.github.warraft.mpq4j
 
-import io.github.warraft.mpq4j.DebugHelper
 import io.github.warraft.mpq4j.compression.CompressionUtil
 import io.github.warraft.mpq4j.compression.RecompressOptions
 import io.github.warraft.mpq4j.security.MPQEncryption
@@ -9,11 +8,7 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
 import java.io.OutputStream
-import java.nio.BufferOverflowException
-import java.nio.BufferUnderflowException
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
-import java.nio.MappedByteBuffer
+import java.nio.*
 import java.nio.file.Files
 import kotlin.math.ceil
 
@@ -180,7 +175,7 @@ class MpqFile(
         return false
     }
 
-    @Throws(IOException::class)
+    
     private fun check(writer: OutputStream) {
         buf.position(0)
         val arr = getSectorAsByteArray(buf, compressedSize)

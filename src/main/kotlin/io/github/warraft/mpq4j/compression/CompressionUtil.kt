@@ -1,7 +1,5 @@
 package io.github.warraft.mpq4j.compression
 
-import systems.crigges.jmpq3.compression.Exploder
-import systems.crigges.jmpq3.compression.ExplorerData
 import java.nio.ByteBuffer
 
 /**
@@ -62,7 +60,7 @@ object CompressionUtil {
                 throw Exception("Unsupported compression Bzip2")
             } else if (isImploded) {
                 val output = ByteArray(uncompressedSize)
-                Exploder(ExplorerData(sector, output, 1))
+                Exploder(sector, output, 1)
                 out.put(output)
                 out.position(0)
                 flip = !flip
@@ -76,7 +74,7 @@ object CompressionUtil {
                     huffman = Huffman()
                 }
                 (if (flip) `in` else out).clear()
-                huffman!!.Decompress(if (flip) out else `in`, if (flip) `in` else out)
+                huffman!!.decompress(if (flip) out else `in`, if (flip) `in` else out)
                 out.limit(out.position())
                 `in`.position(0)
                 out.position(0)
@@ -111,7 +109,7 @@ object CompressionUtil {
             val out = ByteBuffer.wrap(ByteArray(uncompressedSize))
 
             val output = ByteArray(uncompressedSize)
-            Exploder(ExplorerData(sector, output, 0))
+            Exploder(sector, output, 0)
             out.put(output)
             out.position(0)
             return out.array()

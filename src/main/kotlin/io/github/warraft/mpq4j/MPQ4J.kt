@@ -1,8 +1,6 @@
 package io.github.warraft.mpq4j
 
 import org.apache.commons.compress.utils.SeekableInMemoryByteChannel
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import io.github.warraft.mpq4j.compression.RecompressOptions
 import io.github.warraft.mpq4j.security.MPQEncryption
 import io.github.warraft.mpq4j.security.MPQHashGenerator
@@ -22,7 +20,6 @@ import java.util.*
 import kotlin.math.min
 
 class MPQ4J {
-    private val log: Logger = LoggerFactory.getLogger(this.javaClass.getName())
     private var attributes: AttributesFile? = null
 
     /**
@@ -156,9 +153,6 @@ class MPQ4J {
     private var newBlockSize = 0
 
     /**
-     * @return Whether the map can be modified or not
-     */
-    /**
      * If write operations are supported on the archive.
      */
     var isCanWrite: Boolean
@@ -183,7 +177,6 @@ class MPQ4J {
         // process open options
         this.isCanWrite = !listOf<MPQOpenOption?>(*openOptions).contains(MPQOpenOption.READ_ONLY)
         legacyCompatibility = listOf<MPQOpenOption?>(*openOptions).contains(MPQOpenOption.FORCE_V0)
-        log.debug(mpqArchive.toString())
         try {
             setupTempDir()
 
@@ -216,22 +209,15 @@ class MPQ4J {
         }
     }
 
-    @Throws(IOException::class)
+
     private fun readMpq() {
         headerOffset = searchHeader()
-
         readHeaderSize()
-
         readHeader()
-
         checkLegacyCompat()
-
         readHashTable()
-
         readBlockTable()
-
         readListFile()
-
         readAttributesFile()
     }
 
@@ -244,7 +230,6 @@ class MPQ4J {
     constructor(mpqArchive: File, vararg openOptions: MPQOpenOption?) : this(mpqArchive.toPath(), *openOptions)
 
 
-    @Throws(IOException::class)
     private fun checkLegacyCompat() {
         if (legacyCompatibility) {
             // limit end of archive by end of file
@@ -271,12 +256,12 @@ class MPQ4J {
      */
     fun setExternalListfile(externalListfilePath: File) {
         if (!this.isCanWrite) {
-            log.warn("The mpq was opened as readonly, setting an external listfile will have no effect.")
+            println("⚠️The mpq was opened as readonly, setting an external listfile will have no effect.")
             return
         }
         if (!externalListfilePath.exists()) {
-            log.warn(
-                "External MPQ File: " + externalListfilePath.absolutePath +
+            println(
+                "⚠️External MPQ File: " + externalListfilePath.absolutePath +
                         " does not exist and will not be used"
             )
             return
@@ -288,7 +273,7 @@ class MPQ4J {
             // Operation succeeded and added a listfile so we can now write properly.
             // (as long as it wasn't read-only to begin with)
         } catch (_: Exception) {
-            log.warn("Could not apply external listfile: " + externalListfilePath.absolutePath)
+            println("⚠️Could not apply external listfile: " + externalListfilePath.absolutePath)
             // The value of canWrite is not changed intentionally
         }
     }
@@ -303,10 +288,10 @@ class MPQ4J {
                 listFile = Listfile(extractFileAsBytes("(listfile)"))
                 checkListfileEntries()
             } catch (e: Exception) {
-                log.warn("Extracting the mpq's listfile failed. It cannot be rebuild.", e)
+                println("⚠️Extracting the mpq's listfile failed. It cannot be rebuild. | $e")
             }
         } else {
-            log.warn("The mpq doesn't contain a listfile. It cannot be rebuild.")
+            println("⚠️The mpq doesn't contain a listfile. It cannot be rebuild.")
             this.isCanWrite = false
         }
     }
@@ -340,7 +325,7 @@ class MPQ4J {
         listFile!!.fileMap.entries.removeIf { file: MutableMap.MutableEntry<Long, String>? -> !hasFile(file!!.value) }
     }
 
-    @Throws(IOException::class)
+
     private fun readBlockTable() {
         val blockBuffer = ByteBuffer.allocate(blockSize * 16).order(ByteOrder.LITTLE_ENDIAN)
         fc.position(headerOffset + blockPos)
@@ -349,7 +334,7 @@ class MPQ4J {
         blockTable = BlockTable(blockBuffer)
     }
 
-    @Throws(IOException::class)
+
     private fun readHashTable() {
         // read hash table
         val hashBuffer = ByteBuffer.allocate(hashSize * 16)
@@ -367,7 +352,7 @@ class MPQ4J {
         hashTable!!.readFromBuffer(hashBuffer)
     }
 
-    @Throws(IOException::class)
+
     private fun readHeaderSize() {
         // probe to sample file with
         val probe = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN)
@@ -411,7 +396,7 @@ class MPQ4J {
     //     * Makes the archive readonly.
     //     */
     //    private void loadDefaultListFile() throws IOException {
-    //        log.warn("The mpq doesn't come with a listfile so it cannot be rebuild");
+    //        println("⚠️The mpq doesn't come with a listfile so it cannot be rebuild");
     //        InputStream resource = getClass().getClassLoader().getResourceAsStream("DefaultListfile.txt");
     //        if (resource != null) {
     //            File tempFile = File.createTempFile("jmpq", "lf", tempDir);
@@ -434,7 +419,7 @@ class MPQ4J {
      * @return the file position at which the MPQ archive starts.
      * @throws IOException   if an error occurs while searching.
      */
-    @Throws(IOException::class)
+
     private fun searchHeader(): Long {
         // probe to sample file with
         val probe = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN)
@@ -471,7 +456,7 @@ class MPQ4J {
     /**
      * Read the MPQ archive header from the header chunk.
      */
-    @Throws(IOException::class)
+
     private fun readHeader() {
         val buffer = ByteBuffer.allocate(headerSize).order(ByteOrder.LITTLE_ENDIAN)
         readFully(buffer, fc)
@@ -543,9 +528,6 @@ class MPQ4J {
         buffer.putInt(newBlockSize)
     }
 
-    /**
-     * Calc new table size.
-     */
     private fun calcNewTableSize() {
         val target = listFile!!.files.size + 2
         var current = 2
@@ -556,11 +538,6 @@ class MPQ4J {
         newBlockSize = listFile!!.files.size + 2
     }
 
-    /**
-     * Extract all files.
-     *
-     * @param dest the dest
-     */
     fun extractAllFiles(dest: File) {
         if (!dest.isDirectory()) {
             throw Exception("Destination location isn't a directory")
@@ -568,7 +545,6 @@ class MPQ4J {
         if (hasFile("(listfile)") && listFile != null) {
             for (s in listFile!!.files) {
                 val normalized = if (File.separatorChar == '\\') s else s.replace("\\", File.separator)
-                log.debug("extracting: $normalized")
                 val temp = File(dest.absolutePath + File.separator + normalized)
                 temp.getParentFile().mkdirs()
                 if (hasFile(s)) {
@@ -576,7 +552,7 @@ class MPQ4J {
                     try {
                         extractFile(s, temp)
                     } catch (_: Exception) {
-                        log.warn("File possibly corrupted and could not be extracted: $s")
+                        println("File possibly corrupted and could not be extracted: $s")
                     }
                 }
             }
@@ -608,6 +584,7 @@ class MPQ4J {
         }
     }
 
+    @Suppress("unused")
     val totalFileCount: Int
         /**
          * Gets the total file count.
@@ -651,6 +628,7 @@ class MPQ4J {
 
     fun hasFile(name: String): Boolean = hashTable!!.getBlockIndexOfFile(name) >= 0
 
+    @Suppress("unused")
     val fileNames: MutableList<String?>
         /**
          * Gets the file names.
@@ -663,9 +641,8 @@ class MPQ4J {
      * Extracts the specified file out of the mpq and writes it to the target
      * outputstream.
      *
-     * @param name name of the file
-     * @param dest the outputstream where the file's content is written
      */
+    @Suppress("unused")
     fun extractFile(name: String, dest: OutputStream) {
         try {
             val f = getMpqFile(name)
@@ -682,7 +659,7 @@ class MPQ4J {
      * @return the mpq file
      * @throws IOException Signals that an I/O exception has occurred.
      */
-    @Throws(IOException::class)
+
     fun getMpqFile(name: String): MpqFile {
         val pos = hashTable!!.getBlockIndexOfFile(name)
         val b = blockTable!!.getBlockAtPos(pos)
@@ -702,7 +679,7 @@ class MPQ4J {
      * @return the mpq file
      * @throws IOException Signals that an I/O exception has occurred.
      */
-    @Throws(IOException::class)
+
     fun getMpqFileByBlock(block: BlockTable.Block): MpqFile {
         if (block.hasFlag(MpqFile.ENCRYPTED)) {
             throw IOException("cant access this block")
@@ -772,7 +749,6 @@ class MPQ4J {
         if (!this.isCanWrite) {
             throw NonWritableChannelException()
         }
-        println("⬆️ insert file: $name")
 
         require(!((!override) && listFile!!.containsFile(name))) { "Archive already contains file with name: $name" }
 
@@ -794,20 +770,18 @@ class MPQ4J {
     }
 
     /**
-     * @param buildListfile   whether or not to add a (listfile) to this mpq
-     * @param buildAttributes whether or not to add a (attributes) file to this mpq
+     * @param addListfile   whether or not to add a (listfile) to this mpq
+     * @param adddAttributes whether or not to add a (attributes) file to this mpq
      * @throws IOException
      */
-    fun close(buildListfile: Boolean, buildAttributes: Boolean, options: RecompressOptions) {
+    fun close(addListfile: Boolean, adddAttributes: Boolean, options: RecompressOptions) {
         // only rebuild if allowed
         if (!this.isCanWrite || !fc.isOpen) {
             fc.close()
-            log.debug("closed readonly mpq.")
             return
         }
 
         var t = System.nanoTime()
-        log.debug("Building mpq")
         if (listFile == null) {
             fc.close()
             return
@@ -842,7 +816,6 @@ class MPQ4J {
 
                 sortListfileEntries(existingFiles)
 
-                log.debug("Sorted blocks")
                 if (attributes != null) {
                     attributes!!.setNames(existingFiles)
                 }
@@ -874,7 +847,7 @@ class MPQ4J {
                         currentPos += b.compressedSize.toLong()
                     }
                 }
-                log.debug("Added existing files")
+
                 val newFileMap = HashMap<String?, ByteBuffer?>()
                 for (newFileName in filenameToData) {
                     if (newFileName == null) continue
@@ -886,10 +859,8 @@ class MPQ4J {
                     newBlocks.add(newBlock)
                     MpqFile.writeFileAndBlock(newFile.array(), newBlock, fileWriter, newDiscBlockSize, options)
                     currentPos += newBlock.compressedSize.toLong()
-                    log.debug("Added file $newFileName")
                 }
-                log.debug("Added new files")
-                if (buildListfile && !listFile!!.files.isEmpty()) {
+                if (addListfile && !listFile!!.files.isEmpty()) {
                     // Add listfile
                     newFiles.add("(listfile)")
                     val listfileArr = listFile!!.asByteArray()
@@ -911,7 +882,6 @@ class MPQ4J {
                         options
                     )
                     currentPos += newBlock.compressedSize.toLong()
-                    log.debug("Added listfile")
                 }
 
                 // if (attributes != null) {
@@ -1001,7 +971,6 @@ class MPQ4J {
                 fc.close()
             }
         t = System.nanoTime() - t
-        log.debug("Rebuild complete. Took: " + (t / 1000000) + "ms")
     }
 
     private fun sortListfileEntries(remainingFiles: MutableList<String>?) {
@@ -1104,7 +1073,7 @@ class MPQ4J {
          * @throws java.io.EOFException if EoF is encountered before buffer is full or channel is non
          * blocking.
          */
-        @Throws(IOException::class)
+
         private fun readFully(buffer: ByteBuffer, src: ReadableByteChannel) {
             while (buffer.hasRemaining()) {
                 if (src.read(buffer) < 1) throw EOFException("Cannot read enough bytes.")
@@ -1118,7 +1087,7 @@ class MPQ4J {
          * @param dest   channel to write to.
          * @throws IOException if an exception occurs when writing.
          */
-        @Throws(IOException::class)
+
         private fun writeFully(buffer: ByteBuffer, dest: WritableByteChannel) {
             while (buffer.hasRemaining()) {
                 if (dest.write(buffer) < 1) throw EOFException("Cannot write enough bytes.")

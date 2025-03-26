@@ -244,7 +244,7 @@ class HashTable(capacity: Int) {
 
         // check if file exists
         val index = getFileEntryIndex(fid)
-        if (index == -1 || buckets[index]?.locale != locale) throw Exception("File Not Found <" + name + ">")
+        if (index == -1 || buckets[index]?.locale != locale) throw Exception("File Not Found <$name>")
 
         // delete file
         removeFileEntry(index)
@@ -283,17 +283,17 @@ class HashTable(capacity: Int) {
         /**
          * 64 bit file key.
          */
-        internal val key: Long
+        val key: Long
 
         /**
          * Offset into hash table bucket array to start search.
          */
-        internal val offset: Int
+        val offset: Int
 
         /**
          * File locale in the form of a Windows Language ID.
          */
-        internal val locale: Short
+        val locale: Short
 
         init {
             // generate file offset
@@ -313,12 +313,12 @@ class HashTable(capacity: Int) {
         /**
          * 64 bit file key.
          */
-        internal var key: Long = 0
+        var key: Long = 0
 
         /**
          * File locale in the form of a Windows Language ID.
          */
-        internal var locale: Short = 0
+        var locale: Short = 0
 
         /**
          * Block table index for file data.

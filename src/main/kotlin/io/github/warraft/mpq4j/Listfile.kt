@@ -1,11 +1,10 @@
 package io.github.warraft.mpq4j
 
-import io.github.warraft.mpq4j.HashTable
 import java.nio.charset.StandardCharsets
-import java.util.Scanner
+import java.util.*
 
 class Listfile {
-    val fileMap: java.util.HashMap<Long, String> = HashMap<Long, String>()
+    val fileMap: HashMap<Long, String> = HashMap<Long, String>()
 
     constructor(file: ByteArray) {
         val list = String(file, StandardCharsets.UTF_8)

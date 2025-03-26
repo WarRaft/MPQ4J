@@ -47,8 +47,8 @@ object JzLibHelper {
             err = def!!.deflate(4)
         } while (err != 1)
 
-        val temp = ByteArray(def!!.getTotalOut().toInt())
-        System.arraycopy(comp, 0, temp, 0, def!!.getTotalOut().toInt())
+        val temp = ByteArray(def!!.totalOut.toInt())
+        System.arraycopy(comp, 0, temp, 0, def!!.totalOut.toInt())
         def!!.end()
         return temp
     }

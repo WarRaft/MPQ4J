@@ -1,10 +1,11 @@
 package io.github.warraft.mpq4j.security
 
-import io.github.warraft.mpq4j.security.CryptographicLUT
 import java.lang.Byte
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
-import java.util.Locale
+import java.util.*
+import kotlin.Int
+import kotlin.String
 
 /**
  * MPQ cryptographic hashing function. Generates a 32 bit hash from the supplied
