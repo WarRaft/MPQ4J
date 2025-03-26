@@ -1,10 +1,9 @@
-package systems.crigges.jmpq3.compression
+package io.github.warraft.mpq4j.compression
 
 import ru.eustas.zopfli.Options
 import ru.eustas.zopfli.Zopfli
 import java.io.ByteArrayOutputStream
 import java.io.IOException
-
 
 /**
  * Created by Frotty on 09.05.2017.

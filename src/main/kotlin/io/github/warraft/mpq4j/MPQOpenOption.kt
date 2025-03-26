@@ -1,4 +1,4 @@
-package systems.crigges.jmpq3
+package io.github.warraft.mpq4j
 
 /**
  * Enum of possible MPQ open options supplied at creation time.

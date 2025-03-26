@@ -1,4 +1,4 @@
-package systems.crigges.jmpq3
+package io.github.warraft.mpq4j
 
 import java.io.ByteArrayOutputStream
 import java.io.IOException
@@ -18,7 +18,6 @@ object DebugHelper {
         return String(hexChars).trim { it <= ' ' }
     }
 
-    @JvmStatic
     fun appendData(firstObject: Byte, secondObject: ByteArray?): ByteArray? {
         val byteArray = byteArrayOf(firstObject)
         return appendData(byteArray, secondObject)

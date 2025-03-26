@@ -7,11 +7,11 @@ import org.slf4j.LoggerFactory
 import org.testng.Assert
 import org.testng.annotations.AfterMethod
 import org.testng.annotations.Test
-import systems.crigges.jmpq3.HashTable
-import systems.crigges.jmpq3.MPQOpenOption
-import systems.crigges.jmpq3.MpqFile
-import systems.crigges.jmpq3.compression.RecompressOptions
-import systems.crigges.jmpq3.security.MPQEncryption
+import io.github.warraft.mpq4j.HashTable
+import io.github.warraft.mpq4j.MPQOpenOption
+import io.github.warraft.mpq4j.MpqFile
+import io.github.warraft.mpq4j.compression.RecompressOptions
+import io.github.warraft.mpq4j.security.MPQEncryption
 import java.io.File
 import java.io.FileInputStream
 import java.io.FilenameFilter

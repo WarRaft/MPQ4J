@@ -1,11 +1,10 @@
-package systems.crigges.jmpq3.security
+package io.github.warraft.mpq4j.security
 
+import io.github.warraft.mpq4j.security.CryptographicLUT
 import java.lang.Byte
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
-import java.util.*
-import kotlin.Int
-import kotlin.String
+import java.util.Locale
 
 /**
  * MPQ cryptographic hashing function. Generates a 32 bit hash from the supplied
@@ -96,24 +95,24 @@ class MPQHashGenerator private constructor(lut: CryptographicLUT) {
         /**
          * Create a new hash generator for hashtable bucket array index hashes.
          */
-        fun getTableOffsetGenerator(): MPQHashGenerator = MPQHashGenerator(CryptographicLUT.HASH_TABLE_OFFSET)
+        fun getTableOffsetGenerator(): MPQHashGenerator = MPQHashGenerator(CryptographicLUT.Companion.HASH_TABLE_OFFSET)
 
 
         /**
          * Create a new hash generator for part 1 of hashtable keys.
          */
-        fun getTableKey1Generator(): MPQHashGenerator = MPQHashGenerator(CryptographicLUT.HASH_TABLE_KEY1)
+        fun getTableKey1Generator(): MPQHashGenerator = MPQHashGenerator(CryptographicLUT.Companion.HASH_TABLE_KEY1)
 
 
         /**
          * Create a new hash generator for part 2 of hashtable keys.
          */
-        fun getTableKey2Generator(): MPQHashGenerator = MPQHashGenerator(CryptographicLUT.HASH_TABLE_KEY2)
+        fun getTableKey2Generator(): MPQHashGenerator = MPQHashGenerator(CryptographicLUT.Companion.HASH_TABLE_KEY2)
 
 
         /**
          * Create a new hash generator for MPQ encryption keys.
          */
-        fun getFileKeyGenerator(): MPQHashGenerator = MPQHashGenerator(CryptographicLUT.HASH_ENCRYPTION_KEY)
+        fun getFileKeyGenerator(): MPQHashGenerator = MPQHashGenerator(CryptographicLUT.Companion.HASH_ENCRYPTION_KEY)
     }
 }

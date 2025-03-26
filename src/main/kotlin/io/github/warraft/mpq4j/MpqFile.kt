@@ -1,16 +1,19 @@
-package systems.crigges.jmpq3
+package io.github.warraft.mpq4j
 
-import io.github.warraft.mpq4j.BlockTable
-import systems.crigges.jmpq3.DebugHelper.appendData
-import systems.crigges.jmpq3.compression.CompressionUtil
-import systems.crigges.jmpq3.compression.RecompressOptions
-import systems.crigges.jmpq3.security.MPQEncryption
-import systems.crigges.jmpq3.security.MPQHashGenerator
+import io.github.warraft.mpq4j.DebugHelper
+import io.github.warraft.mpq4j.compression.CompressionUtil
+import io.github.warraft.mpq4j.compression.RecompressOptions
+import io.github.warraft.mpq4j.security.MPQEncryption
+import io.github.warraft.mpq4j.security.MPQHashGenerator
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
 import java.io.OutputStream
-import java.nio.*
+import java.nio.BufferOverflowException
+import java.nio.BufferUnderflowException
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.nio.MappedByteBuffer
 import java.nio.file.Files
 import kotlin.math.ceil
 
@@ -37,7 +40,7 @@ class MpqFile(
         val pathlessName = name.substring(sepIndex + 1)
         if (block.hasFlag(ENCRYPTED)) {
             isEncrypted = true
-            val keyGen = MPQHashGenerator.getFileKeyGenerator()
+            val keyGen = MPQHashGenerator.Companion.getFileKeyGenerator()
             keyGen.process(pathlessName)
             baseKey = keyGen.hash
             if (block.hasFlag(ADJUSTED_ENCRYPTED)) {
@@ -351,7 +354,7 @@ class MpqFile(
                 }
                 if (compSector != null && compSector.size + 1 < temp.size) {
                     if (b.hasFlag(ENCRYPTED)) {
-                        val keyGen = MPQHashGenerator.getFileKeyGenerator()
+                        val keyGen = MPQHashGenerator.Companion.getFileKeyGenerator()
                         keyGen.process(pathlessName)
                         var bKey = keyGen.hash
                         if (b.hasFlag(ADJUSTED_ENCRYPTED)) {
@@ -359,7 +362,7 @@ class MpqFile(
                         }
 
                         if (MPQEncryption(bKey + i, false).processFinal(
-                                ByteBuffer.wrap(appendData(2.toByte(), compSector), 0, compSector.size + 1), buf
+                                ByteBuffer.wrap(DebugHelper.appendData(2.toByte(), compSector), 0, compSector.size + 1), buf
                             )
                         ) throw BufferOverflowException()
                     } else {
@@ -370,7 +373,7 @@ class MpqFile(
                     sotPos += compSector.size + 1
                 } else {
                     if (b.hasFlag(ENCRYPTED)) {
-                        val keyGen = MPQHashGenerator.getFileKeyGenerator()
+                        val keyGen = MPQHashGenerator.Companion.getFileKeyGenerator()
                         keyGen.process(pathlessName)
                         var bKey = keyGen.hash
                         if (b.hasFlag(ADJUSTED_ENCRYPTED)) {
@@ -393,7 +396,7 @@ class MpqFile(
             sot.position(0)
             buf.order(ByteOrder.LITTLE_ENDIAN)
             if (b.hasFlag(ENCRYPTED)) {
-                val keyGen = MPQHashGenerator.getFileKeyGenerator()
+                val keyGen = MPQHashGenerator.Companion.getFileKeyGenerator()
                 keyGen.process(pathlessName)
                 var bKey = keyGen.hash
                 if (b.hasFlag(ADJUSTED_ENCRYPTED)) {

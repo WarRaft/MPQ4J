@@ -4,9 +4,9 @@ import org.apache.commons.compress.utils.SeekableInMemoryByteChannel
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import systems.crigges.jmpq3.*
-import systems.crigges.jmpq3.compression.RecompressOptions
-import systems.crigges.jmpq3.security.MPQEncryption
-import systems.crigges.jmpq3.security.MPQHashGenerator
+import io.github.warraft.mpq4j.compression.RecompressOptions
+import io.github.warraft.mpq4j.security.MPQEncryption
+import io.github.warraft.mpq4j.security.MPQHashGenerator
 import java.io.EOFException
 import java.io.File
 import java.io.IOException

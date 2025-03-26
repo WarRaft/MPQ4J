@@ -1,4 +1,4 @@
-package systems.crigges.jmpq3.compression
+package io.github.warraft.mpq4j.compression
 
 import com.jcraft.jzlib.Deflater
 import com.jcraft.jzlib.GZIPException
@@ -10,7 +10,6 @@ object JzLibHelper {
     private var defLvl = 0
     private var def: Deflater? = null
 
-    @JvmStatic
     fun inflate(bytes: ByteArray, offset: Int, uncompSize: Int): ByteArray {
         val uncomp = ByteArray(uncompSize)
         inf.init()
@@ -27,7 +26,6 @@ object JzLibHelper {
 
     var comp: ByteArray = ByteArray(1024)
 
-    @JvmStatic
     fun deflate(bytes: ByteArray, strongDeflate: Boolean): ByteArray {
         val created = tryCreateDeflater(if (strongDeflate) 9 else 1)
 

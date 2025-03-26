@@ -1,4 +1,4 @@
-package systems.crigges.jmpq3.compression
+package io.github.warraft.mpq4j.compression
 
 class RecompressOptions(@JvmField var recompress: Boolean) {
     @JvmField

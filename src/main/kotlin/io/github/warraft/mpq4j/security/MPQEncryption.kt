@@ -1,5 +1,6 @@
-package systems.crigges.jmpq3.security
+package io.github.warraft.mpq4j.security
 
+import io.github.warraft.mpq4j.security.CryptographicLUT
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import kotlin.math.min
@@ -103,7 +104,7 @@ class MPQEncryption(key: Int, invert: Boolean) {
         var blocks: Int = min(src.remaining(), dst.remaining()).toInt() / BLOCK_SIZE
         while (blocks > 0) {
             // prepare block
-            seed += CryptographicLUT.ENCRYPTION.lookup(key.toByte())
+            seed += CryptographicLUT.Companion.ENCRYPTION.lookup(key.toByte())
             val block = key + seed
 
             // process input

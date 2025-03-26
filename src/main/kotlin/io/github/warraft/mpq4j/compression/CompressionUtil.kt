@@ -1,7 +1,11 @@
-package systems.crigges.jmpq3.compression
+package io.github.warraft.mpq4j.compression
 
-import systems.crigges.jmpq3.compression.JzLibHelper.deflate
-import systems.crigges.jmpq3.compression.JzLibHelper.inflate
+import io.github.warraft.mpq4j.compression.ADPCM
+import systems.crigges.jmpq3.compression.Exploder
+import io.github.warraft.mpq4j.compression.Huffman
+import io.github.warraft.mpq4j.compression.JzLibHelper
+import io.github.warraft.mpq4j.compression.RecompressOptions
+import io.github.warraft.mpq4j.compression.ZopfliHelper
 import java.nio.ByteBuffer
 
 /**
@@ -28,7 +32,7 @@ object CompressionUtil {
         if (recompress.recompress && recompress.useZopfli && zopfli == null) {
             zopfli = ZopfliHelper()
         }
-        return if (recompress.useZopfli) zopfli!!.deflate(temp, recompress.iterations) else deflate(
+        return if (recompress.useZopfli) zopfli!!.deflate(temp, recompress.iterations) else JzLibHelper.deflate(
             temp,
             recompress.recompress
         )
@@ -53,7 +57,7 @@ object CompressionUtil {
             val isHuffmanCompressed = (compressionType.toInt() and FLAG_HUFFMAN.toInt()) != 0
 
             if (isDeflated) {
-                out.put(inflate(sector, 1, uncompressedSize))
+                out.put(JzLibHelper.inflate(sector, 1, uncompressedSize))
                 out.position(0)
                 flip = !flip
             } else if (isLZMACompressed) {

@@ -1,6 +1,8 @@
-package systems.crigges.jmpq3
+package io.github.warraft.mpq4j
 
-import java.util.*
+import java.util.IdentityHashMap
+import java.util.LinkedList
+import kotlin.collections.get
 
 /**
  *

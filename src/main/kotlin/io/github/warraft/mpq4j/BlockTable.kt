@@ -1,7 +1,7 @@
 package io.github.warraft.mpq4j
 
-import systems.crigges.jmpq3.MpqFile
-import systems.crigges.jmpq3.security.MPQEncryption
+import io.github.warraft.mpq4j.MpqFile
+import io.github.warraft.mpq4j.security.MPQEncryption
 import java.io.IOException
 import java.nio.BufferOverflowException
 import java.nio.ByteBuffer

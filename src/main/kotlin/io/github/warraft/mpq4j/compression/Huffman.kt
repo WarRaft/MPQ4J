@@ -1,7 +1,7 @@
-package systems.crigges.jmpq3.compression
+package io.github.warraft.mpq4j.compression
 
 import java.nio.ByteBuffer
-import java.util.*
+import java.util.TreeMap
 
 internal class Huffman {
     private class Node {

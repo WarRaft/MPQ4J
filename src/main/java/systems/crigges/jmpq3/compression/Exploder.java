@@ -247,7 +247,7 @@ public class Exploder {
                 if (nCopyLen == 2) {
 
                     // Store the exact offset to a byte in the dictionary
-                    pCopyOffs = (int) (pDictPos - 1 - ((i << 2) + (nBitBuffer & 0x03)));
+                    pCopyOffs = (int) (pDictPos - 1 - ((i << 2) + (nBitBuffer & 0b11)));
 
                     // Remove the rest of the dictionary offset from the bit buffer
                     nBitBuffer >>= 2;

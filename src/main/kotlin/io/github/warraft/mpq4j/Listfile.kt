@@ -1,6 +1,6 @@
 package io.github.warraft.mpq4j
 
-import systems.crigges.jmpq3.HashTable
+import io.github.warraft.mpq4j.HashTable
 import java.nio.charset.StandardCharsets
 import java.util.Scanner
 

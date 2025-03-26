@@ -1,10 +1,6 @@
-package systems.crigges.jmpq3.security
+package io.github.warraft.mpq4j.security
 
 import java.lang.Short
-import kotlin.Array
-import kotlin.Int
-import kotlin.IntArray
-import kotlin.also
 
 /**
  * Cryptographic lookup tables used by MPQ for cryptographic operations such as

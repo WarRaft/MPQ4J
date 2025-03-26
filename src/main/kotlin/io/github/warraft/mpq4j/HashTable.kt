@@ -1,6 +1,6 @@
-package systems.crigges.jmpq3
+package io.github.warraft.mpq4j
 
-import systems.crigges.jmpq3.security.MPQHashGenerator
+import io.github.warraft.mpq4j.security.MPQHashGenerator
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
@@ -297,7 +297,7 @@ class HashTable(capacity: Int) {
 
         init {
             // generate file offset
-            val offsetGen = MPQHashGenerator.getTableOffsetGenerator()
+            val offsetGen = MPQHashGenerator.Companion.getTableOffsetGenerator()
             offsetGen.process(name)
             offset = offsetGen.hash
             key = calculateFileKey(name)
@@ -367,10 +367,10 @@ class HashTable(capacity: Int) {
 
         fun calculateFileKey(name: String): Long {
             // generate file key
-            val key1Gen = MPQHashGenerator.getTableKey1Generator()
+            val key1Gen = MPQHashGenerator.Companion.getTableKey1Generator()
             key1Gen.process(name)
             val key1 = key1Gen.hash
-            val key2Gen = MPQHashGenerator.getTableKey2Generator()
+            val key2Gen = MPQHashGenerator.Companion.getTableKey2Generator()
             key2Gen.process(name)
             val key2 = key2Gen.hash
             return (key2.toLong() shl 32) or Integer.toUnsignedLong(key1)

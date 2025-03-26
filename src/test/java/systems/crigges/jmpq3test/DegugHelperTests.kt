@@ -2,7 +2,7 @@ package systems.crigges.jmpq3test
 
 import org.testng.Assert
 import org.testng.annotations.Test
-import systems.crigges.jmpq3.DebugHelper
+import io.github.warraft.mpq4j.DebugHelper
 
 /**
  * Created by Frotty on 09.03.2017.
