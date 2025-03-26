@@ -15,34 +15,9 @@ package systems.crigges.jmpq3.compression;
   https://code.google.com/p/stormlibsharp/source/browse/trunk/development/stormlib/src/pklib/explode.c?r=2
   http://yumiko.svnrepository.com/TrinityCore/trac.cgi/browser/trunk/contrib/vmap_extractor_v2/stormlib/pklib/explode.c
 
-/* pkexplode.c                                Copyright (c) ShadowFlare 2003 */
-/*---------------------------------------------------------------------------*/
-/* Explode function compatible with compressed data from PKWARE Data         */
-/* Compression library                                                       */
-/*                                                                           */
-/* Author: ShadowFlare (blakflare@hotmail.com)                               */
-/*                                                                           */
-/* This code was created from a format specification that was posted on      */
-/* a newsgroup.  No reverse-engineering of any kind was performed by         */
-/* me to produce this code.                                                  */
-/*                                                                           */
-/* This code is free and you may perform any modifications to it that        */
-/* you wish to perform, but please leave my name in the file as the          */
-/* original author of the code.                                              */
-/*                                                                           */
-/*---------------------------------------------------------------------------*/
-/*   Date    Ver   Comment                                                   */
-/* --------  ----  -------                                                   */
-/* 03/05/10  1.02  Fix the timing of a buffer check                          */
-/* 10/24/03  1.01  Added checks for when the end of a buffer is reached      */
-/*                 Extended error codes added                                */
-/* 06/29/03  1.00  First version                                             */
-
-/*****************************************************************************/
+*/
 
 public class Exploder {
-    private static final int PK_LITERAL_SIZE_FIXED = 0; // Use fixed size literal bytes, used for binary data
-    private static final int PK_LITERAL_SIZE_VARIABLE = 1; // Use variable size literal bytes, used for text
 
     private static long TRUNCATE_VALUE(long value, int bits) {
         return ((value) & ((1L << (bits)) - 1));
@@ -137,8 +112,8 @@ public class Exploder {
                     0x03, 0x0D, 0x05, 0x19, 0x09, 0x11, 0x01, 0x3E, 0x1E, 0x2E, 0x0E, 0x36, 0x16, 0x26, 0x06, 0x3A,
                     0x1A, 0x2A, 0x0A, 0x32, 0x12, 0x22, 0x42, 0x02, 0x7C, 0x3C, 0x5C, 0x1C, 0x6C, 0x2C, 0x4C, 0x0C,
                     0x74, 0x34, 0x54, 0x14, 0x64, 0x24, 0x44, 0x04, 0x78, 0x38, 0x58, 0x18, 0x68, 0x28, 0x48, 0x08,
-                    (byte) 0xF0, 0x70, (byte) 0xB0, 0x30, (byte) 0xD0, 0x50, (byte) 0x90, 0x10, (byte) 0xE0, 0x60, (byte) 0xA0, 0x20, (byte) 0xC0, 0x40,
-                    (byte) 0x80, 0x00
+                    -16, 0x70, -80, 0x30, -48, 0x50, -112, 0x10, -32, 0x60, -96, 0x20, -64, 0x40,
+                    -128, 0x00
             };
 
     // Lengths of bit sequences used to represent the most significant 6 bits of the copy offset
@@ -165,7 +140,7 @@ public class Exploder {
         byte nDictSizeByte = pInBuffer[pInPos++];
 
         // Check for a valid compression type
-        if (nLitSize != PK_LITERAL_SIZE_FIXED && nLitSize != PK_LITERAL_SIZE_VARIABLE)
+        if (nLitSize != 0 && nLitSize != 1)
             throw new IllegalArgumentException("PK_ERR_BAD_DATA: Invalid LitSize: " + nLitSize);
 
         // Only dictionary sizes of 1024, 2048, and 4096 are allowed.
@@ -283,7 +258,8 @@ public class Exploder {
                 }
 
                 // While there are still bytes left, copy bytes from the dictionary
-                while (nCopyLen-- > 0) {
+                while (nCopyLen > 0) {
+                    nCopyLen--;
 
                     // If output buffer has become full, stop immediately!
                     if (pOutPos >= pOutBuffer.length)
@@ -315,7 +291,7 @@ public class Exploder {
             else {
 
                 // Fixed size literal byte
-                if (nLitSize == PK_LITERAL_SIZE_FIXED) {
+                if (nLitSize == 0) {
 
                     // Copy the byte and add it to the end of the dictionary
                     // *pDictPos++ = *pOutPos++ = (byte)(nBitBuffer >> 1);
