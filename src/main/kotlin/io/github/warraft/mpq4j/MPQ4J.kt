@@ -179,7 +179,6 @@ class MPQ4J {
      *
      * @param mpqArchive  path to a MPQ archive file.
      * @param openOptions options to use when opening the archive.
-     * @throws systems.crigges.jmpq3.JMpqException if mpq is damaged or not supported.
      */
     constructor(mpqArchive: Path, vararg openOptions: MPQOpenOption?) {
         // process open options
@@ -190,13 +189,18 @@ class MPQ4J {
             setupTempDir()
 
             fc = if (this.isCanWrite)
-                FileChannel.open(mpqArchive, StandardOpenOption.CREATE, StandardOpenOption.READ, StandardOpenOption.WRITE)
+                FileChannel.open(
+                    mpqArchive,
+                    StandardOpenOption.CREATE,
+                    StandardOpenOption.READ,
+                    StandardOpenOption.WRITE
+                )
             else
                 FileChannel.open(mpqArchive, StandardOpenOption.READ)
 
             readMpq()
         } catch (e: IOException) {
-            throw JMpqException(mpqArchive.toAbsolutePath().toString() + ": " + e.message)
+            throw Exception(mpqArchive.toAbsolutePath().toString() + ": " + e.message)
         }
     }
 
@@ -211,7 +215,7 @@ class MPQ4J {
 
             readMpq()
         } catch (e: IOException) {
-            throw JMpqException("Byte array mpq: " + e.message)
+            throw Exception("Byte array mpq: " + e.message)
         }
     }
 
@@ -239,7 +243,6 @@ class MPQ4J {
      *
      * @param mpqArchive  a MPQ archive file.
      * @param openOptions options to use when opening the archive.
-     * @throws JMpqException if mpq is damaged or not supported.
      */
     constructor(mpqArchive: File, vararg openOptions: MPQOpenOption?) : this(mpqArchive.toPath(), *openOptions)
 
@@ -248,7 +251,6 @@ class MPQ4J {
      * Kept for backwards compatibility, but deprecated
      *
      * @param mpqArchive a MPQ archive file.
-     * @throws JMpqException if mpq is damaged or not supported.
      */
     @Deprecated("")
     constructor(mpqArchive: File) : this(mpqArchive.toPath(), MPQOpenOption.FORCE_V0)
@@ -266,10 +268,7 @@ class MPQ4J {
 
     private fun readAttributesFile() {
         if (hasFile("(attributes)")) {
-            try {
-                attributes = AttributesFile(extractFileAsBytes("(attributes)"))
-            } catch (_: Exception) {
-            }
+            attributes = AttributesFile(extractFileAsBytes("(attributes)"))
         }
     }
 
@@ -327,9 +326,7 @@ class MPQ4J {
      * Performs verification to see if we know all the blocks of this file.
      * Prints warnings if we don't know all blocks.
      *
-     * @throws JMpqException If retrieving valid blocks fails
      */
-    @Throws(JMpqException::class)
     private fun checkListfileEntries() {
         val hiddenFiles = (if (hasFile("(attributes)")) 2 else 1) + (if (hasFile("(signature)")) 1 else 0)
         if (this.isCanWrite) {
@@ -341,9 +338,7 @@ class MPQ4J {
      * Checks listfile for completeness against block table
      *
      * @param hiddenFiles Num. hidden files
-     * @throws JMpqException If retrieving valid blocks fails
      */
-    @Throws(JMpqException::class)
     private fun checkListfileCompleteness(hiddenFiles: Int) {
         if (listFile!!.files.size <= blockTable!!.allVaildBlocks.size - hiddenFiles) {
             log.warn("mpq's listfile is incomplete. Blocks without listfile entry will be discarded")
@@ -396,11 +391,10 @@ class MPQ4J {
             headerSize = 32
         } else if (headerSize < 32 || 208 < headerSize) {
             // header too small or too big
-            throw JMpqException("Bad header size.")
+            throw Exception("Bad header size.")
         }
     }
 
-    @Throws(JMpqException::class)
     private fun setupTempDir() {
         try {
             val path = Paths.get(System.getProperty("java.io.tmpdir") + "jmpq")
@@ -417,7 +411,7 @@ class MPQ4J {
             try {
                 tempDir = Files.createTempDirectory("jmpq").toFile()
             } catch (e1: IOException) {
-                throw JMpqException(e1)
+                throw Exception(e1)
             }
         }
     }
@@ -450,7 +444,6 @@ class MPQ4J {
      *
      * @return the file position at which the MPQ archive starts.
      * @throws IOException   if an error occurs while searching.
-     * @throws JMpqException if file does not contain a MPQ archive.
      */
     @Throws(IOException::class)
     private fun searchHeader(): Long {
@@ -485,7 +478,7 @@ class MPQ4J {
             filePos += 0x200
         }
 
-        throw JMpqException("No MPQ archive in file.")
+        throw Exception("No MPQ archive in file.")
     }
 
     /**
@@ -586,12 +579,10 @@ class MPQ4J {
      * Extract all files.
      *
      * @param dest the dest
-     * @throws JMpqException the j mpq exception
      */
-    @Throws(JMpqException::class)
     fun extractAllFiles(dest: File) {
         if (!dest.isDirectory()) {
-            throw JMpqException("Destination location isn't a directory")
+            throw Exception("Destination location isn't a directory")
         }
         if (hasFile("(listfile)") && listFile != null) {
             for (s in listFile!!.files) {
@@ -605,7 +596,7 @@ class MPQ4J {
                     // Prevent exception due to nonexistent listfile entries
                     try {
                         extractFile(s, temp)
-                    } catch (_: JMpqException) {
+                    } catch (_: Exception) {
                         log.warn("File possibly corrupted and could not be extracted: $s")
                     }
                 }
@@ -633,18 +624,16 @@ class MPQ4J {
                     i++
                 }
             } catch (e: IOException) {
-                throw JMpqException(e)
+                throw Exception(e)
             }
         }
     }
 
-    @get:Throws(JMpqException::class)
     val totalFileCount: Int
         /**
          * Gets the total file count.
          *
          * @return the total file count
-         * @throws JMpqException the j mpq exception
          */
         get() = blockTable!!.allVaildBlocks.size
 
@@ -653,58 +642,35 @@ class MPQ4J {
      *
      * @param name name of the file
      * @param dest destination to that the files content is written
-     * @throws JMpqException if file is not found or access errors occur
      */
-    @Throws(JMpqException::class)
     fun extractFile(name: String, dest: File?) {
         try {
             val f = getMpqFile(name)
             f.extractToFile(dest)
         } catch (e: Exception) {
-            throw JMpqException(e)
+            throw Exception(e)
         }
     }
 
-    /**
-     * Extracts the specified file out of the mpq to the target location.
-     *
-     * @param name name of the file
-     * @throws JMpqException if file is not found or access errors occur
-     */
-    @Throws(JMpqException::class)
     fun extractFileAsBytes(name: String): ByteArray {
         try {
             val f = getMpqFile(name)
             return f.extractToBytes()
         } catch (e: IOException) {
-            throw JMpqException(e)
+            throw Exception(e)
         }
     }
 
-    @Throws(JMpqException::class)
     fun extractFileAsString(name: String): String {
         try {
             val f = extractFileAsBytes(name)
             return String(f)
         } catch (e: IOException) {
-            throw JMpqException(e)
+            throw Exception(e)
         }
     }
 
-    /**
-     * Checks for file.
-     *
-     * @param name the name
-     * @return true, if successful
-     */
-    fun hasFile(name: String?): Boolean {
-        try {
-            hashTable!!.getBlockIndexOfFile(name)
-        } catch (_: IOException) {
-            return false
-        }
-        return true
-    }
+    fun hasFile(name: String?): Boolean = hashTable!!.getBlockIndexOfFile(name) >= 0
 
     val fileNames: MutableList<String?>
         /**
@@ -720,15 +686,13 @@ class MPQ4J {
      *
      * @param name name of the file
      * @param dest the outputstream where the file's content is written
-     * @throws JMpqException if file is not found or access errors occur
      */
-    @Throws(JMpqException::class)
     fun extractFile(name: String, dest: OutputStream?) {
         try {
             val f = getMpqFile(name)
             f.extractToOutputStream(dest)
         } catch (e: IOException) {
-            throw JMpqException(e)
+            throw Exception(e)
         }
     }
 
@@ -797,7 +761,6 @@ class MPQ4J {
      * Deletes the specified file out of the mpq once you rebuild the mpq.
      *
      * @param name of the file inside the mpq
-     * @throws JMpqException if file is not found or access errors occur
      */
     fun deleteFile(name: String?) {
         if (!this.isCanWrite) {
@@ -843,7 +806,7 @@ class MPQ4J {
             val data = ByteBuffer.wrap(Files.readAllBytes(file.toPath()))
             filenameToData.put(name, data)
         } catch (e: IOException) {
-            throw JMpqException(e)
+            throw Exception(e)
         }
     }
 
@@ -880,167 +843,191 @@ class MPQ4J {
         }
         val temp = File.createTempFile("jmpq", "temp", tempDir)
         temp.deleteOnExit()
-        FileChannel.open(temp.toPath(), StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.READ).use { writeChannel ->
-            val headerReader = ByteBuffer.allocate(((if (keepHeaderOffset) headerOffset else 0) + 4).toInt()).order(ByteOrder.LITTLE_ENDIAN)
-            fc.position((if (keepHeaderOffset) 0 else headerOffset))
-            readFully(headerReader, fc)
-            headerReader.rewind()
-            writeChannel.write(headerReader)
+        FileChannel.open(temp.toPath(), StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.READ)
+            .use { writeChannel ->
+                val headerReader = ByteBuffer.allocate(((if (keepHeaderOffset) headerOffset else 0) + 4).toInt())
+                    .order(ByteOrder.LITTLE_ENDIAN)
+                fc.position((if (keepHeaderOffset) 0 else headerOffset))
+                readFully(headerReader, fc)
+                headerReader.rewind()
+                writeChannel.write(headerReader)
 
-            newFormatVersion = formatVersion
-            when (newFormatVersion) {
-                0 -> newHeaderSize = 32
-                1 -> newHeaderSize = 44
-                2, 3 -> newHeaderSize = 208
-            }
-            newSectorSizeShift = if (options.recompress) min(options.newSectorSizeShift.toDouble(), 15.0).toInt() else sectorSizeShift
-            newDiscBlockSize = if (options.recompress) 512 * (1 shl newSectorSizeShift) else discBlockSize
-            calcNewTableSize()
-
-            val newBlocks = mutableListOf<BlockTable.Block?>()
-            val newFiles = mutableListOf<String?>()
-            val existingFiles = listFile!!.files
-
-            sortListfileEntries(existingFiles)
-
-            log.debug("Sorted blocks")
-            if (attributes != null) {
-                attributes!!.setNames(existingFiles)
-            }
-            var currentPos = (if (keepHeaderOffset) headerOffset else 0) + headerSize
-
-            for (fileName in filenameToData.keys) {
-                existingFiles.remove(fileName)
-            }
-
-            for (existingName in existingFiles) {
-                if (existingName == null) continue
-                if (options.recompress && !existingName.endsWith(".wav")) {
-                    val extracted = ByteBuffer.wrap(extractFileAsBytes(existingName))
-                    filenameToData.put(existingName, extracted)
-                } else {
-                    newFiles.add(existingName)
-                    val pos = hashTable!!.getBlockIndexOfFile(existingName)
-                    val b = blockTable!!.getBlockAtPos(pos)
-                    val buf = ByteBuffer.allocate(b.compressedSize).order(ByteOrder.LITTLE_ENDIAN)
-                    fc.position(headerOffset + b.filePos)
-                    readFully(buf, fc)
-                    buf.rewind()
-                    val f = MpqFile(buf, b, discBlockSize, existingName)
-                    val fileWriter = writeChannel.map(FileChannel.MapMode.READ_WRITE, currentPos, b.compressedSize.toLong())
-                    val newBlock = BlockTable.Block(currentPos - (if (keepHeaderOffset) headerOffset else 0), 0, 0, b.flags)
-                    newBlocks.add(newBlock)
-                    f.writeFileAndBlock(newBlock, fileWriter)
-                    currentPos += b.compressedSize.toLong()
+                newFormatVersion = formatVersion
+                when (newFormatVersion) {
+                    0 -> newHeaderSize = 32
+                    1 -> newHeaderSize = 44
+                    2, 3 -> newHeaderSize = 208
                 }
+                newSectorSizeShift = if (options.recompress) min(
+                    options.newSectorSizeShift.toDouble(),
+                    15.0
+                ).toInt() else sectorSizeShift
+                newDiscBlockSize = if (options.recompress) 512 * (1 shl newSectorSizeShift) else discBlockSize
+                calcNewTableSize()
+
+                val newBlocks = mutableListOf<BlockTable.Block?>()
+                val newFiles = mutableListOf<String?>()
+                val existingFiles = listFile!!.files
+
+                sortListfileEntries(existingFiles)
+
+                log.debug("Sorted blocks")
+                if (attributes != null) {
+                    attributes!!.setNames(existingFiles)
+                }
+                var currentPos = (if (keepHeaderOffset) headerOffset else 0) + headerSize
+
+                for (fileName in filenameToData.keys) {
+                    existingFiles.remove(fileName)
+                }
+
+                for (existingName in existingFiles) {
+                    if (existingName == null) continue
+                    if (options.recompress && !existingName.endsWith(".wav")) {
+                        val extracted = ByteBuffer.wrap(extractFileAsBytes(existingName))
+                        filenameToData.put(existingName, extracted)
+                    } else {
+                        newFiles.add(existingName)
+                        val pos = hashTable!!.getBlockIndexOfFile(existingName)
+                        val b = blockTable!!.getBlockAtPos(pos)
+                        val buf = ByteBuffer.allocate(b.compressedSize).order(ByteOrder.LITTLE_ENDIAN)
+                        fc.position(headerOffset + b.filePos)
+                        readFully(buf, fc)
+                        buf.rewind()
+                        val f = MpqFile(buf, b, discBlockSize, existingName)
+                        val fileWriter =
+                            writeChannel.map(FileChannel.MapMode.READ_WRITE, currentPos, b.compressedSize.toLong())
+                        val newBlock =
+                            BlockTable.Block(currentPos - (if (keepHeaderOffset) headerOffset else 0), 0, 0, b.flags)
+                        newBlocks.add(newBlock)
+                        f.writeFileAndBlock(newBlock, fileWriter)
+                        currentPos += b.compressedSize.toLong()
+                    }
+                }
+                log.debug("Added existing files")
+                val newFileMap = HashMap<String?, ByteBuffer?>()
+                for (newFileName in filenameToData) {
+                    val newFile: ByteBuffer = filenameToData.get(newFileName)!!
+                    newFiles.add(newFileName)
+                    newFileMap.put(newFileName, newFile)
+                    val fileWriter = writeChannel.map(FileChannel.MapMode.READ_WRITE, currentPos, newFile.limit() * 2L)
+                    val newBlock = BlockTable.Block(currentPos - (if (keepHeaderOffset) headerOffset else 0), 0, 0, 0)
+                    newBlocks.add(newBlock)
+                    MpqFile.writeFileAndBlock(newFile.array(), newBlock, fileWriter, newDiscBlockSize, options)
+                    currentPos += newBlock.compressedSize.toLong()
+                    log.debug("Added file $newFileName")
+                }
+                log.debug("Added new files")
+                if (buildListfile && !listFile!!.files.isEmpty()) {
+                    // Add listfile
+                    newFiles.add("(listfile)")
+                    val listfileArr = listFile!!.asByteArray()
+                    val fileWriter =
+                        writeChannel.map(FileChannel.MapMode.READ_WRITE, currentPos, listfileArr!!.size * 2L)
+                    val newBlock = BlockTable.Block(
+                        currentPos - (if (keepHeaderOffset) headerOffset else 0),
+                        0,
+                        0,
+                        MpqFile.EXISTS or MpqFile.COMPRESSED or MpqFile.ENCRYPTED or MpqFile.ADJUSTED_ENCRYPTED
+                    )
+                    newBlocks.add(newBlock)
+                    MpqFile.writeFileAndBlock(
+                        listfileArr,
+                        newBlock,
+                        fileWriter,
+                        newDiscBlockSize,
+                        "(listfile)",
+                        options
+                    )
+                    currentPos += newBlock.compressedSize.toLong()
+                    log.debug("Added listfile")
+                }
+
+                // if (attributes != null) {
+                // newFiles.add("(attributes)");
+                // // Only generate attributes file when there has been one before
+                // AttributesFile attributesFile = new AttributesFile(newFiles.size());
+                // // Generate new values
+                // long time = (new Date().getTime() + 11644473600000L) * 10000L;
+                // for (int i = 0; i < newFiles.size() - 1; i++) {
+                // String name = newFiles.get(i);
+                // int entry = attributes.getEntry(name);
+                // if (newFileMap.containsKey(name)){
+                // // new file
+                // attributesFile.setEntry(i, getCrc32(newFileMap.get(name)), time);
+                // }else if (entry >= 0) {
+                // // has timestamp
+                // attributesFile.setEntry(i, getCrc32(name),
+                // attributes.getTimestamps()[entry]);
+                // } else {
+                // // doesnt have timestamp
+                // attributesFile.setEntry(i, getCrc32(name), time);
+                // }
+                // }
+                // // newfiles don't contain the attributes file yet, hence -1
+                // System.out.println("added attributes");
+                // byte[] attrArr = attributesFile.buildFile();
+                // fileWriter = writeChannel.map(MapMode.READ_WRITE, currentPos,
+                // attrArr.length);
+                // newBlock = new Block(currentPos - headerOffset, 0, 0, EXISTS |
+                // COMPRESSED | ENCRYPTED | ADJUSTED_ENCRYPTED);
+                // newBlocks.add(newBlock);
+                // MpqFile.writeFileAndBlock(attrArr, newBlock, fileWriter,
+                // newDiscBlockSize, "(attributes)");
+                // currentPos += newBlock.getCompressedSize();
+                // }
+                newBlockSize = newBlocks.size
+
+                newHashPos = currentPos - (if (keepHeaderOffset) headerOffset else 0)
+                newBlockPos = newHashPos + newHashSize * 16L
+
+                // generate new hash table
+                val hashSize = newHashSize
+                val hashTable = HashTable(hashSize)
+                var blockIndex = 0
+                for (file in newFiles) {
+                    hashTable.setFileBlockIndex(file, HashTable.DEFAULT_LOCALE, blockIndex++)
+                }
+
+                // prepare hashtable for writing
+                val hashTableBuffer = ByteBuffer.allocate(hashSize * 16)
+                hashTable.writeToBuffer(hashTableBuffer)
+                hashTableBuffer.flip()
+
+                // encrypt hash table
+                val encrypt = MPQEncryption(KEY_HASH_TABLE, false)
+                encrypt.processSingle(hashTableBuffer)
+                hashTableBuffer.flip()
+
+                // write out hash table
+                writeChannel.position(currentPos)
+                writeFully(hashTableBuffer, writeChannel)
+                currentPos = writeChannel.position()
+
+                // write out block table
+                val blocktableWriter = writeChannel.map(FileChannel.MapMode.READ_WRITE, currentPos, newBlockSize * 16L)
+                blocktableWriter.order(ByteOrder.LITTLE_ENDIAN)
+                BlockTable.writeNewBlocktable(newBlocks, newBlockSize, blocktableWriter)
+                currentPos += newBlockSize * 16L
+
+                newArchiveSize = currentPos + 1 - (if (keepHeaderOffset) headerOffset else 0)
+
+                val headerWriter = writeChannel.map(
+                    FileChannel.MapMode.READ_WRITE,
+                    (if (keepHeaderOffset) headerOffset else 0L) + 4L,
+                    headerSize + 4L
+                )
+                headerWriter.order(ByteOrder.LITTLE_ENDIAN)
+                writeHeader(headerWriter)
+
+                val tempReader = writeChannel.map(FileChannel.MapMode.READ_WRITE, 0, currentPos + 1)
+                tempReader.position(0)
+
+                fc.position(0)
+                fc.write(tempReader)
+                fc.truncate(fc.position())
+                fc.close()
             }
-            log.debug("Added existing files")
-            val newFileMap = HashMap<String?, ByteBuffer?>()
-            for (newFileName in filenameToData) {
-                val newFile: ByteBuffer = filenameToData.get(newFileName)!!
-                newFiles.add(newFileName)
-                newFileMap.put(newFileName, newFile)
-                val fileWriter = writeChannel.map(FileChannel.MapMode.READ_WRITE, currentPos, newFile.limit() * 2L)
-                val newBlock = BlockTable.Block(currentPos - (if (keepHeaderOffset) headerOffset else 0), 0, 0, 0)
-                newBlocks.add(newBlock)
-                MpqFile.writeFileAndBlock(newFile.array(), newBlock, fileWriter, newDiscBlockSize, options)
-                currentPos += newBlock.compressedSize.toLong()
-                log.debug("Added file $newFileName")
-            }
-            log.debug("Added new files")
-            if (buildListfile && !listFile!!.files.isEmpty()) {
-                // Add listfile
-                newFiles.add("(listfile)")
-                val listfileArr = listFile!!.asByteArray()
-                val fileWriter = writeChannel.map(FileChannel.MapMode.READ_WRITE, currentPos, listfileArr!!.size * 2L)
-                val newBlock = BlockTable.Block(currentPos - (if (keepHeaderOffset) headerOffset else 0), 0, 0, MpqFile.EXISTS or MpqFile.COMPRESSED or MpqFile.ENCRYPTED or MpqFile.ADJUSTED_ENCRYPTED)
-                newBlocks.add(newBlock)
-                MpqFile.writeFileAndBlock(listfileArr, newBlock, fileWriter, newDiscBlockSize, "(listfile)", options)
-                currentPos += newBlock.compressedSize.toLong()
-                log.debug("Added listfile")
-            }
-
-            // if (attributes != null) {
-            // newFiles.add("(attributes)");
-            // // Only generate attributes file when there has been one before
-            // AttributesFile attributesFile = new AttributesFile(newFiles.size());
-            // // Generate new values
-            // long time = (new Date().getTime() + 11644473600000L) * 10000L;
-            // for (int i = 0; i < newFiles.size() - 1; i++) {
-            // String name = newFiles.get(i);
-            // int entry = attributes.getEntry(name);
-            // if (newFileMap.containsKey(name)){
-            // // new file
-            // attributesFile.setEntry(i, getCrc32(newFileMap.get(name)), time);
-            // }else if (entry >= 0) {
-            // // has timestamp
-            // attributesFile.setEntry(i, getCrc32(name),
-            // attributes.getTimestamps()[entry]);
-            // } else {
-            // // doesnt have timestamp
-            // attributesFile.setEntry(i, getCrc32(name), time);
-            // }
-            // }
-            // // newfiles don't contain the attributes file yet, hence -1
-            // System.out.println("added attributes");
-            // byte[] attrArr = attributesFile.buildFile();
-            // fileWriter = writeChannel.map(MapMode.READ_WRITE, currentPos,
-            // attrArr.length);
-            // newBlock = new Block(currentPos - headerOffset, 0, 0, EXISTS |
-            // COMPRESSED | ENCRYPTED | ADJUSTED_ENCRYPTED);
-            // newBlocks.add(newBlock);
-            // MpqFile.writeFileAndBlock(attrArr, newBlock, fileWriter,
-            // newDiscBlockSize, "(attributes)");
-            // currentPos += newBlock.getCompressedSize();
-            // }
-            newBlockSize = newBlocks.size
-
-            newHashPos = currentPos - (if (keepHeaderOffset) headerOffset else 0)
-            newBlockPos = newHashPos + newHashSize * 16L
-
-            // generate new hash table
-            val hashSize = newHashSize
-            val hashTable = HashTable(hashSize)
-            var blockIndex = 0
-            for (file in newFiles) {
-                hashTable.setFileBlockIndex(file, HashTable.DEFAULT_LOCALE, blockIndex++)
-            }
-
-            // prepare hashtable for writing
-            val hashTableBuffer = ByteBuffer.allocate(hashSize * 16)
-            hashTable.writeToBuffer(hashTableBuffer)
-            hashTableBuffer.flip()
-
-            // encrypt hash table
-            val encrypt = MPQEncryption(KEY_HASH_TABLE, false)
-            encrypt.processSingle(hashTableBuffer)
-            hashTableBuffer.flip()
-
-            // write out hash table
-            writeChannel.position(currentPos)
-            writeFully(hashTableBuffer, writeChannel)
-            currentPos = writeChannel.position()
-
-            // write out block table
-            val blocktableWriter = writeChannel.map(FileChannel.MapMode.READ_WRITE, currentPos, newBlockSize * 16L)
-            blocktableWriter.order(ByteOrder.LITTLE_ENDIAN)
-            BlockTable.writeNewBlocktable(newBlocks, newBlockSize, blocktableWriter)
-            currentPos += newBlockSize * 16L
-
-            newArchiveSize = currentPos + 1 - (if (keepHeaderOffset) headerOffset else 0)
-
-            val headerWriter = writeChannel.map(FileChannel.MapMode.READ_WRITE, (if (keepHeaderOffset) headerOffset else 0L) + 4L, headerSize + 4L)
-            headerWriter.order(ByteOrder.LITTLE_ENDIAN)
-            writeHeader(headerWriter)
-
-            val tempReader = writeChannel.map(FileChannel.MapMode.READ_WRITE, 0, currentPos + 1)
-            tempReader.position(0)
-
-            fc.position(0)
-            fc.write(tempReader)
-            fc.truncate(fc.position())
-            fc.close()
-        }
         t = System.nanoTime() - t
         log.debug("Rebuild complete. Took: " + (t / 1000000) + "ms")
     }
@@ -1107,8 +1094,12 @@ class MPQ4J {
 
     companion object {
         @JvmField
-        val ARCHIVE_HEADER_MAGIC: Int = ByteBuffer.wrap(byteArrayOf('M'.code.toByte(), 'P'.code.toByte(), 'Q'.code.toByte(), 0x1A)).order(ByteOrder.LITTLE_ENDIAN).getInt()
-        val USER_DATA_HEADER_MAGIC: Int = ByteBuffer.wrap(byteArrayOf('M'.code.toByte(), 'P'.code.toByte(), 'Q'.code.toByte(), 0x1B)).order(ByteOrder.LITTLE_ENDIAN).getInt()
+        val ARCHIVE_HEADER_MAGIC: Int =
+            ByteBuffer.wrap(byteArrayOf('M'.code.toByte(), 'P'.code.toByte(), 'Q'.code.toByte(), 0x1A))
+                .order(ByteOrder.LITTLE_ENDIAN).getInt()
+        val USER_DATA_HEADER_MAGIC: Int =
+            ByteBuffer.wrap(byteArrayOf('M'.code.toByte(), 'P'.code.toByte(), 'Q'.code.toByte(), 0x1B))
+                .order(ByteOrder.LITTLE_ENDIAN).getInt()
 
         /**
          * Encryption key for hash table data.

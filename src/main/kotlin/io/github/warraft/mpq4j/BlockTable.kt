@@ -1,6 +1,5 @@
 package io.github.warraft.mpq4j
 
-import systems.crigges.jmpq3.JMpqException
 import systems.crigges.jmpq3.MpqFile
 import systems.crigges.jmpq3.security.MPQEncryption
 import java.io.IOException
@@ -21,20 +20,18 @@ class BlockTable(buf: ByteBuffer) {
         this.blockMap.order(ByteOrder.LITTLE_ENDIAN)
     }
 
-    @Throws(JMpqException::class)
     fun getBlockAtPos(pos: Int): Block {
         if ((pos < 0) || (pos > this.size)) {
-            throw JMpqException("Invaild block position")
+            throw Exception("Invaild block position")
         }
         this.blockMap.position(pos * 16)
         try {
             return Block(this.blockMap)
         } catch (e: IOException) {
-            throw JMpqException(e)
+            throw Exception(e)
         }
     }
 
-    @get:Throws(JMpqException::class)
     val allVaildBlocks: ArrayList<Block?>
         get() {
             val list = java.util.ArrayList<Block?>()

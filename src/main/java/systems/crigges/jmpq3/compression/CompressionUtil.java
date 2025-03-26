@@ -1,7 +1,5 @@
 package systems.crigges.jmpq3.compression;
 
-import systems.crigges.jmpq3.JMpqException;
-
 import java.nio.ByteBuffer;
 
 /**
@@ -29,7 +27,7 @@ public class CompressionUtil {
         return recompress.useZopfli ? zopfli.deflate(temp, recompress.iterations) : JzLibHelper.deflate(temp, recompress.recompress);
     }
 
-    public static byte[] decompress(byte[] sector, int compressedSize, int uncompressedSize) throws JMpqException {
+    public static byte[] decompress(byte[] sector, int compressedSize, int uncompressedSize) throws Exception {
         if (compressedSize == uncompressedSize) {
             return sector;
         } else {
@@ -51,9 +49,9 @@ public class CompressionUtil {
                 out.position(0);
                 flip = !flip;
             } else if (isLZMACompressed) {
-                throw new JMpqException("Unsupported compression LZMA");
+                throw new Exception("Unsupported compression LZMA");
             } else if (isBzip2Compressed) {
-                throw new JMpqException("Unsupported compression Bzip2");
+                throw new Exception("Unsupported compression Bzip2");
             } else if (isImploded) {
                 byte[] output = new byte[uncompressedSize];
                 Exploder.pkexplode(sector, output, 1);
@@ -62,7 +60,7 @@ public class CompressionUtil {
                 flip = !flip;
             }
             if (isSparseCompressed) {
-                throw new JMpqException("Unsupported compression sparse");
+                throw new Exception("Unsupported compression sparse");
             }
 
             if (isHuffmanCompressed) {
@@ -98,7 +96,7 @@ public class CompressionUtil {
         }
     }
 
-    public static byte[] explode(byte[] sector, int compressedSize, int uncompressedSize) throws JMpqException {
+    public static byte[] explode(byte[] sector, int compressedSize, int uncompressedSize) {
         if (compressedSize == uncompressedSize) {
             return sector;
         } else {

@@ -8,7 +8,6 @@ import org.testng.Assert
 import org.testng.annotations.AfterMethod
 import org.testng.annotations.Test
 import systems.crigges.jmpq3.HashTable
-import systems.crigges.jmpq3.JMpqException
 import systems.crigges.jmpq3.MPQOpenOption
 import systems.crigges.jmpq3.MpqFile
 import systems.crigges.jmpq3.compression.RecompressOptions
@@ -96,7 +95,9 @@ class MpqTests {
 
     @Test
     fun testException() {
-        Assert.expectThrows<JMpqException?>(JMpqException::class.java, Assert.ThrowingRunnable { BlockTable(ByteBuffer.wrap(ByteArray(0))).getBlockAtPos(-1) })
+        Assert.expectThrows<Exception?>(
+            Exception::class.java,
+            Assert.ThrowingRunnable { BlockTable(ByteBuffer.wrap(ByteArray(0))).getBlockAtPos(-1) })
     }
 
     @Test
@@ -193,8 +194,11 @@ class MpqTests {
             val temp = File.createTempFile("war3mapj", "extracted", MPQ4J.tempDir)
             temp.deleteOnExit()
             if (mpqEditor.hasFile("war3map.j")) {
-                val extractedFile = mpqEditor.extractFileAsString("war3map.j").replace("\\r\\n".toRegex(), "\n").replace("\\r".toRegex(), "\n")
-                val existingFile = String(Files.readAllBytes(getFile("war3map.j").toPath())).replace("\\r\\n".toRegex(), "\n").replace("\\r".toRegex(), "\n")
+                val extractedFile = mpqEditor.extractFileAsString("war3map.j").replace("\\r\\n".toRegex(), "\n")
+                    .replace("\\r".toRegex(), "\n")
+                val existingFile =
+                    String(Files.readAllBytes(getFile("war3map.j").toPath())).replace("\\r\\n".toRegex(), "\n")
+                        .replace("\\r".toRegex(), "\n")
                 Assert.assertEquals(existingFile, extractedFile)
             }
             mpqEditor.close()
@@ -211,8 +215,11 @@ class MpqTests {
             val temp = File.createTempFile("war3mapj", "extracted", MPQ4J.tempDir)
             temp.deleteOnExit()
             if (mpqEditor.hasFile("war3map.j")) {
-                val extractedFile = mpqEditor.extractFileAsString("war3map.j").replace("\\r\\n".toRegex(), "\n").replace("\\r".toRegex(), "\n")
-                val existingFile = String(Files.readAllBytes(getFile("war3map.j").toPath())).replace("\\r\\n".toRegex(), "\n").replace("\\r".toRegex(), "\n")
+                val extractedFile = mpqEditor.extractFileAsString("war3map.j").replace("\\r\\n".toRegex(), "\n")
+                    .replace("\\r".toRegex(), "\n")
+                val existingFile =
+                    String(Files.readAllBytes(getFile("war3map.j").toPath())).replace("\\r\\n".toRegex(), "\n")
+                        .replace("\\r".toRegex(), "\n")
                 Assert.assertEquals(existingFile, extractedFile)
             }
             mpqEditor.close()
@@ -288,12 +295,16 @@ class MpqTests {
                     return
                 }
                 mpqEditor.insertByteArray("Test", "bytesasdadasdad".toByteArray())
-                Assert.expectThrows<IllegalArgumentException?>(IllegalArgumentException::class.java, Assert.ThrowingRunnable {
-                    mpqEditor.insertByteArray("Test", "bytesasdadasdad".toByteArray())
-                })
-                Assert.expectThrows<IllegalArgumentException?>(IllegalArgumentException::class.java, Assert.ThrowingRunnable {
-                    mpqEditor.insertByteArray("teST", "bytesasdadasdad".toByteArray())
-                })
+                Assert.expectThrows<IllegalArgumentException?>(
+                    IllegalArgumentException::class.java,
+                    Assert.ThrowingRunnable {
+                        mpqEditor.insertByteArray("Test", "bytesasdadasdad".toByteArray())
+                    })
+                Assert.expectThrows<IllegalArgumentException?>(
+                    IllegalArgumentException::class.java,
+                    Assert.ThrowingRunnable {
+                        mpqEditor.insertByteArray("teST", "bytesasdadasdad".toByteArray())
+                    })
                 mpqEditor.insertByteArray("teST", "bytesasdadasdad".toByteArray(), true)
             }
         }
@@ -416,7 +427,7 @@ class MpqTests {
     private fun getFiles(dir: File): MutableSet<File> {
         val ret: MutableSet<File> = LinkedHashSet<File>()
 
-        for (file in dir.listFiles()) {
+        for (file in dir.listFiles()!!) {
             if (file.isDirectory()) ret.addAll(getFiles(file))
             else ret.add(file)
         }
@@ -427,7 +438,9 @@ class MpqTests {
     @Test
     @Throws(IOException::class)
     fun newBlocksizeBufferOverflow() {
-        var mpq = File(MpqTests::class.java.getClassLoader().getResource("newBlocksizeBufferOverflow/mpq/newBlocksizeBufferOverflow.w3x").getFile())
+        var mpq: File =
+            Paths.get("src", "test", "resources", "newBlocksizeBufferOverflow", "mpq", "newBlocksizeBufferOverflow.w3x")
+                .toFile()
 
         val targetMpq = mpq.toPath().resolveSibling("file1.mpq").toFile()
 
@@ -439,13 +452,15 @@ class MpqTests {
 
         val resourceDir = "newBlocksizeBufferOverflow/insertions"
 
-        val files = getFiles(File(MpqTests::class.java.getClassLoader().getResource("./" + resourceDir + "/").getFile()))
+        val files = listFilesRecursive(
+            Paths.get("src", "test", "resources", "newBlocksizeBufferOverflow", "insertions").toFile()
+        )
 
         val mpqEditor = MPQ4J(mpq, MPQOpenOption.FORCE_V0)
 
         for (file in files) {
-            val inName = file.toString().substring(file.toString().lastIndexOf(resourceDir) + resourceDir.length + File.separator.length)
-
+            val inName = file.toString()
+                .substring(file.toString().lastIndexOf(resourceDir) + resourceDir.length + File.separator.length)
             mpqEditor.insertFile(inName, file)
         }
 
@@ -481,7 +496,11 @@ class MpqTests {
         private val mpqs: Array<File>?
             get() {
                 val files = File(MpqTests::class.java.getClassLoader().getResource("./mpqs/").file)
-                    .listFiles(FilenameFilter { dir: File?, name: String? -> name!!.endsWith(".w3x") || name.endsWith("" + ".mpq") || name.endsWith(".scx") })
+                    .listFiles(FilenameFilter { dir: File?, name: String? ->
+                        name!!.endsWith(".w3x") || name.endsWith("" + ".mpq") || name.endsWith(
+                            ".scx"
+                        )
+                    })
                 if (files != null) {
                     for (i in files.indices) {
                         val target = files[i].toPath().resolveSibling(files[i].getName() + "_copy")
@@ -510,3 +529,5 @@ class MpqTests {
         }
     }
 }
+
+fun listFilesRecursive(dir: File): List<File> = dir.walk().filter { it.isFile }.toList()

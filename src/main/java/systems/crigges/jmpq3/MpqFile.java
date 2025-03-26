@@ -62,14 +62,14 @@ public class MpqFile {
         return name;
     }
 
-    public void extractToFile(File f) throws IOException {
+    public void extractToFile(File f) throws Exception {
         if (sectorCount == 1) {
             f.createNewFile();
         }
         extractToOutputStream(Files.newOutputStream(f.toPath()));
     }
 
-    public byte[] extractToBytes() throws IOException {
+    public byte[] extractToBytes() throws Exception {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         extractToOutputStream(byteArrayOutputStream);
         byte[] bytes = byteArrayOutputStream.toByteArray();
@@ -77,7 +77,7 @@ public class MpqFile {
         return bytes;
     }
 
-    public void extractToOutputStream(OutputStream writer) throws IOException {
+    public void extractToOutputStream(OutputStream writer) throws Exception {
         if (sectorCount == 1) {
             writer.close();
             return;
@@ -91,7 +91,7 @@ public class MpqFile {
         }
     }
 
-    private void extractCompressedBlock(OutputStream writer) throws IOException {
+    private void extractCompressedBlock(OutputStream writer) throws Exception {
         buf.position(0);
         byte[] sot = new byte[sectorCount * 4];
         buf.get(sot);
@@ -127,7 +127,7 @@ public class MpqFile {
         writer.close();
     }
 
-    private boolean extractSingleUnitBlock(OutputStream writer) throws IOException {
+    private boolean extractSingleUnitBlock(OutputStream writer) throws Exception {
         if (block.hasFlag(SINGLE_UNIT)) {
             if (block.hasFlag(COMPRESSED)) {
                 buf.position(0);
@@ -147,7 +147,7 @@ public class MpqFile {
         return false;
     }
 
-    private boolean extractImplodedBlock(OutputStream writer) throws IOException {
+    private boolean extractImplodedBlock(OutputStream writer) throws Exception {
         if (block.hasFlag(IMPLODED)) {
             buf.position(0);
             byte[] sot = new byte[sectorCount * 4];
@@ -201,10 +201,10 @@ public class MpqFile {
     /**
      * Write file and block.
      *
-     * @param newBlock        the new block
+     * @param newBlock    the new block
      * @param writeBuffer the write buffer
      */
-    public void writeFileAndBlock(Block newBlock, MappedByteBuffer writeBuffer) throws JMpqException {
+    public void writeFileAndBlock(Block newBlock, MappedByteBuffer writeBuffer) {
         newBlock.normalSize = normalSize;
         newBlock.compressedSize = compressedSize;
         if (normalSize == 0) {
@@ -266,27 +266,10 @@ public class MpqFile {
         }
     }
 
-    /**
-     * Write file and block.
-     *
-     * @param b                    the b
-     * @param buf                the buf
-     * @param sectorSize the sector size
-     * @param recompress
-     */
     public static void writeFileAndBlock(byte[] file, Block b, MappedByteBuffer buf, int sectorSize, RecompressOptions recompress) {
         writeFileAndBlock(file, b, buf, sectorSize, "", recompress);
     }
 
-    /**
-     * Write file and block.
-     *
-     * @param fileArr        the file arr
-     * @param b                    the b
-     * @param buf                the buf
-     * @param sectorSize the sector size
-     * @param recompress
-     */
     public static void writeFileAndBlock(byte[] fileArr, Block b, MappedByteBuffer buf, int sectorSize, String pathlessName, RecompressOptions recompress) {
         ByteBuffer fileBuf = ByteBuffer.wrap(fileArr);
         fileBuf.position(0);
@@ -327,7 +310,7 @@ public class MpqFile {
                     }
 
                     if (new MPQEncryption(bKey + i, false).processFinal(
-                        ByteBuffer.wrap(DebugHelper.appendData((byte) 2, compSector), 0, compSector.length + 1), buf))
+                            ByteBuffer.wrap(DebugHelper.appendData((byte) 2, compSector), 0, compSector.length + 1), buf))
                         throw new BufferOverflowException();
                 } else {
                     // deflate compression indicator
@@ -373,7 +356,7 @@ public class MpqFile {
     /**
      * Gets the sector as byte array.
      *
-     * @param buf                the buf
+     * @param buf        the buf
      * @param sectorSize the sector size
      * @return the sector as byte array
      */
@@ -386,23 +369,22 @@ public class MpqFile {
     /**
      * Decompress sector.
      *
-     * @param sector                     the sector
-     * @param normalSize             the normal size
+     * @param sector           the sector
+     * @param normalSize       the normal size
      * @param uncompressedSize the uncomp size
      * @return the byte[]
-     * @throws JMpqException the j mpq exception
      */
-    private byte[] decompressSector(byte[] sector, int normalSize, int uncompressedSize) throws JMpqException {
+    private byte[] decompressSector(byte[] sector, int normalSize, int uncompressedSize) throws Exception {
         return CompressionUtil.decompress(sector, normalSize, uncompressedSize);
     }
 
-    private byte[] decompressImplodedSector(byte[] sector, int normalSize, int uncompressedSize) throws JMpqException {
+    private byte[] decompressImplodedSector(byte[] sector, int normalSize, int uncompressedSize) throws Exception {
         return CompressionUtil.explode(sector, normalSize, uncompressedSize);
     }
 
     @Override
     public String toString() {
         return "MpqFile [sectorSize=" + sectorSize + ", compressedSize=" + compressedSize + ", normalSize=" + normalSize + ", flags=" + flags + ", name=" + name
-            + "]";
+                + "]";
     }
 }

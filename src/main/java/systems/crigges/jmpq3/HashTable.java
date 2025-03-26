@@ -50,9 +50,8 @@ public class HashTable {
      * <p>
      * The table can hold at most the specified capacity worth of file mappings,
      * which must be a power of 2.
-     * 
-     * @param capacity
-     *            power of 2 capacity for the underlying bucket array.
+     *
+     * @param capacity power of 2 capacity for the underlying bucket array.
      */
     public HashTable(int capacity) {
         if (capacity <= 0 || (capacity & (capacity - 1)) != 0) {
@@ -85,9 +84,8 @@ public class HashTable {
 
     /**
      * Internal method to get a bucket index for the specified file.
-     * 
-     * @param file
-     *            file identifier.
+     *
+     * @param file file identifier.
      * @return the bucket index used, or -1 if the file has no mapping.
      */
     private int getFileEntryIndex(FileIdentifier file) {
@@ -116,9 +114,8 @@ public class HashTable {
 
     /**
      * Internal method to get a bucket for the specified file.
-     * 
-     * @param file
-     *            file identifier.
+     *
+     * @param file file identifier.
      * @return the file bucket, or null if the file has no mapping.
      */
     private Bucket getFileEntry(FileIdentifier file) {
@@ -130,11 +127,10 @@ public class HashTable {
      * Check if the specified file path has a mapping in this hash table.
      * <p>
      * A file path has a mapping if it has been mapped for at least 1 locale.
-     * 
-     * @param file
-     *            file path.
+     *
+     * @param file file path.
      * @return true if the hash table has a mapping for the file, otherwise
-     *         false.
+     * false.
      */
     public boolean hasFile(String file) {
         return getFileEntryIndex(new FileIdentifier(file, DEFAULT_LOCALE)) != -1;
@@ -142,14 +138,12 @@ public class HashTable {
 
     /**
      * Get the block table index for the specified file.
-     * 
-     * @param name
-     *            file path name.
+     *
+     * @param name file path name.
      * @return block table index.
-     * @throws IOException
-     *             if the specified file has no mapping.
+     * @throws IOException if the specified file has no mapping.
      */
-    public int getBlockIndexOfFile(String name) throws IOException {
+    public int getBlockIndexOfFile(String name) throws Exception {
         return getFileBlockIndex(name, DEFAULT_LOCALE);
     }
 
@@ -160,23 +154,23 @@ public class HashTable {
      * for a different locale. When multiple locales are available the order of
      * priority for selection is the specified locale followed by the default
      * locale and lastly the first locale found.
-     * 
-     * @param name
-     *            file path name.
-     * @param locale
-     *            file locale.
+     *
+     * @param name   file path name.
+     * @param locale file locale.
      * @return block table index.
-     * @throws IOException
-     *             if the specified file has no mapping.
+     * @throws IOException if the specified file has no mapping.
      */
-    public int getFileBlockIndex(String name, short locale) throws IOException {
+    public int getFileBlockIndex(String name, short locale) throws Exception {
         final FileIdentifier fid = new FileIdentifier(name, locale);
         Bucket entry = getFileEntry(fid);
 
-        if (entry == null)
-            throw new JMpqException("File Not Found <" + name + ">.");
-        else if (entry.blockTableIndex < 0)
-            throw new JMpqException("File has invalid block table index <" + entry.blockTableIndex + ">.");
+        if (entry == null) {
+            System.out.println("File Not Found <" + name + ">.");
+            return -1;
+        } else if (entry.blockTableIndex < 0) {
+            System.out.println("File has invalid block table index <" + entry.blockTableIndex + ">.");
+            return -1;
+        }
 
         return entry.blockTableIndex;
     }
@@ -184,17 +178,13 @@ public class HashTable {
     /**
      * Set a block table index for the specified file. Existing mappings are
      * updated.
-     * 
-     * @param name
-     *            file path name.
-     * @param locale
-     *            file locale.
-     * @param blockIndex
-     *            block table index.
-     * @throws IOException
-     *             if the mapping cannot be created.
+     *
+     * @param name       file path name.
+     * @param locale     file locale.
+     * @param blockIndex block table index.
+     * @throws IOException if the mapping cannot be created.
      */
-    public void setFileBlockIndex(String name, short locale, int blockIndex) throws IOException {
+    public void setFileBlockIndex(String name, short locale, int blockIndex) throws Exception {
         if (blockIndex < 0)
             throw new IllegalArgumentException("Block index numbers cannot be negative.");
 
@@ -209,7 +199,7 @@ public class HashTable {
 
         // check if space for new entry
         if (mappingNumber == buckets.length)
-            throw new JMpqException("Hash table cannot fit another mapping.");
+            throw new Exception("Hash table cannot fit another mapping.");
 
         // locate suitable entry
         final int mask = buckets.length - 1;
@@ -235,9 +225,8 @@ public class HashTable {
 
     /**
      * Internal method to remove a file entry at the specified bucket index.
-     * 
-     * @param index
-     *            bucket to clear.
+     *
+     * @param index bucket to clear.
      */
     private void removeFileEntry(int index) {
         final int bi = buckets[index].blockTableIndex;
@@ -264,21 +253,18 @@ public class HashTable {
 
     /**
      * Remove the specified file from the hash table.
-     * 
-     * @param name
-     *            file path name.
-     * @param locale
-     *            file locale.
-     * @throws IOException
-     *             if the file cannot be found.
+     *
+     * @param name   file path name.
+     * @param locale file locale.
+     * @throws IOException if the file cannot be found.
      */
-    public void removeFile(String name, short locale) throws IOException {
+    public void removeFile(String name, short locale) throws Exception {
         final FileIdentifier fid = new FileIdentifier(name, locale);
 
         // check if file exists
         final int index = getFileEntryIndex(fid);
         if (index == -1 || buckets[index].locale != locale)
-            throw new JMpqException("File Not Found <" + name + ">");
+            throw new Exception("File Not Found <" + name + ">");
 
         // delete file
         removeFileEntry(index);
@@ -286,14 +272,12 @@ public class HashTable {
 
     /**
      * Remove the specified file from the hash table for all locales.
-     * 
-     * @param name
-     *            file path name.
+     *
+     * @param name file path name.
      * @return number of file entries that were removed.
-     * @throws IOException
-     *             if no file entries were found.
+     * @throws IOException if no file entries were found.
      */
-    public int removeFileAll(String name) throws IOException {
+    public int removeFileAll(String name) throws Exception {
         final FileIdentifier fid = new FileIdentifier(name, DEFAULT_LOCALE);
         int count = 0;
         int index;
@@ -304,7 +288,7 @@ public class HashTable {
 
         // check if file was removed
         if (count == 0)
-            throw new JMpqException("File Not Found <" + name + ">");
+            throw new Exception("File Not Found <" + name + ">");
 
         return count;
     }
