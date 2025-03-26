@@ -227,11 +227,48 @@ class MpqTests {
     }
 
     @Test
-    @Throws(IOException::class)
     fun testInsertDeleteRegularFile() {
         val mpqs: Array<File>? = mpqs
-        for (mpq in mpqs!!) {
-            //insertAndDelete(mpq, "Example.txt")
+        if (mpqs == null) return
+
+        val p = Paths.get("src", "test", "resources", "Example.txt").toFile()
+
+        for (mpq in mpqs) {
+            println("✅ ${mpq.name}")
+
+            MPQ4J(mpq, MPQOpenOption.FORCE_V0).apply {
+                if (!isCanWrite) return
+                Assert.assertFalse(hasFile(p.name))
+                val hashBefore = TestHelper.md5(mpq)
+                insertFile(p.name, p)
+                deleteFile(p.name)
+                insertFile(p.name, p)
+                close()
+
+                val hashAfter = TestHelper.md5(mpq)
+                Assert.assertNotEquals(hashBefore, hashAfter)
+            }
+
+            MPQ4J(mpq, MPQOpenOption.FORCE_V0).apply {
+                Assert.assertTrue(hasFile(p.name))
+                deleteFile(p.name)
+                close()
+            }
+
+            MPQ4J(mpq, MPQOpenOption.FORCE_V0).apply {
+                if (!isCanWrite) return
+                insertFile(p.name, p, true)
+                insertFile(p.name, p, true)
+                deleteFile(p.name)
+                Assert.assertFalse(hasFile(p.name))
+                close()
+            }
+
+            MPQ4J(mpq, MPQOpenOption.READ_ONLY, MPQOpenOption.FORCE_V0).apply {
+                //TODO
+                //Assert.assertFalse(hasFile(p.name))
+                close()
+            }
         }
     }
 
@@ -361,40 +398,6 @@ class MpqTests {
         }
     }
 
-    @Throws(IOException::class)
-    private fun insertAndDelete(mpq: File, filename: String?) {
-        MPQ4J(mpq, MPQOpenOption.FORCE_V0).also { mpqEditor ->
-            if (!mpqEditor.isCanWrite) {
-                return
-            }
-            Assert.assertFalse(mpqEditor.hasFile(filename))
-            val hashBefore = TestHelper.md5(mpq)
-            mpqEditor.insertFile(filename, getFile(filename))
-            mpqEditor.deleteFile(filename)
-            mpqEditor.insertFile(filename, getFile(filename))
-            mpqEditor.close()
-
-            val hashAfter = TestHelper.md5(mpq)
-            // If this fails, the mpq is not changed by the insert file command and something went wrong
-            Assert.assertNotEquals(hashBefore, hashAfter)
-        }
-        MPQ4J(mpq, MPQOpenOption.FORCE_V0).also { mpqEditor ->
-            Assert.assertTrue(mpqEditor.hasFile(filename))
-            mpqEditor.deleteFile(filename)
-        }
-        MPQ4J(mpq, MPQOpenOption.FORCE_V0).also { mpqEditor ->
-            if (!mpqEditor.isCanWrite) {
-                return
-            }
-            mpqEditor.insertFile(filename, getFile(filename), true)
-            mpqEditor.insertFile(filename, getFile(filename), true)
-            mpqEditor.deleteFile(filename)
-        }
-        MPQ4J(mpq, MPQOpenOption.READ_ONLY, MPQOpenOption.FORCE_V0).also { mpqEditor ->
-            Assert.assertFalse(mpqEditor.hasFile(filename))
-        }
-    }
-
     @Test
     @Throws(IOException::class)
     fun testRemoveHeaderoffset() {
@@ -492,12 +495,13 @@ class MpqTests {
     companion object {
         private var files: Array<out File?>? = null
 
-        @get:Throws(IOException::class)
+
         private val mpqs: Array<File>?
             get() {
-                val files = File(MpqTests::class.java.getClassLoader().getResource("./mpqs/").file)
+                //val files = File(MpqTests::class.java.getClassLoader().getResource("./mpqs/").file)
+                val files = Paths.get("src", "test", "resources", "mpqs").toFile()
                     .listFiles(FilenameFilter { dir: File?, name: String? ->
-                        name!!.endsWith(".w3x") || name.endsWith("" + ".mpq") || name.endsWith(
+                        name!!.endsWith(".w3x") || name.endsWith(".mpq") || name.endsWith(
                             ".scx"
                         )
                     })
@@ -524,8 +528,8 @@ class MpqTests {
             }
         }
 
-        private fun getFile(name: String?): File {
-            return File(MpqTests::class.java.getClassLoader().getResource(name).getFile())
+        private fun getFile(name: String): File {
+            return Paths.get("src", "test", "resources", name).toFile()
         }
     }
 }

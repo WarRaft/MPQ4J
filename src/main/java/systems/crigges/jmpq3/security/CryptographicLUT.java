@@ -21,7 +21,7 @@ final class CryptographicLUT {
 
     /**
      * Updates cryptographic table seed 1 cycle.
-     * 
+     *
      * @param seed
      *            old seed.
      * @return new seed.
@@ -81,7 +81,7 @@ final class CryptographicLUT {
 
     /**
      * Generates a cryptographic LUT with the specified table index.
-     * 
+     *
      * @param table
      *            the table index to use.
      */
@@ -91,7 +91,7 @@ final class CryptographicLUT {
 
     /**
      * Lookup value using this cryptographic LUT.
-     * 
+     *
      * @param value
      *            value being looked up.
      * @return cryptographic int from the LUT.

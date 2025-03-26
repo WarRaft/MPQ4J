@@ -101,7 +101,7 @@ class BlockTable(buf: ByteBuffer) {
     }
 
     companion object {
-        fun writeNewBlocktable(blocks: MutableList<Block?>, size: Int, buf: MappedByteBuffer?) {
+        fun writeNewBlocktable(blocks: MutableList<Block?>, size: Int, buf: MappedByteBuffer) {
             val temp = ByteBuffer.allocate(size * 16)
             temp.order(ByteOrder.LITTLE_ENDIAN)
             for (b in blocks) {

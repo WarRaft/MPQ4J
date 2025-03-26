@@ -104,7 +104,7 @@ class MPQ4J {
     /**
      * The internal filename.
      */
-    private val filenameToData = LinkedIdentityHashMap<String?, ByteBuffer>()
+    private val filenameToData = LinkedIdentityHashMap<String, ByteBuffer>()
     /** The files to add.  */
     /**
      * The keep header offset.
@@ -210,9 +210,7 @@ class MPQ4J {
         legacyCompatibility = listOf<MPQOpenOption?>(*openOptions).contains(MPQOpenOption.FORCE_V0)
         try {
             setupTempDir()
-
             fc = SeekableInMemoryByteChannel(mpqArchive)
-
             readMpq()
         } catch (e: IOException) {
             throw Exception("Byte array mpq: " + e.message)
@@ -246,14 +244,6 @@ class MPQ4J {
      */
     constructor(mpqArchive: File, vararg openOptions: MPQOpenOption?) : this(mpqArchive.toPath(), *openOptions)
 
-    /**
-     * See [.JMpqEditor] }
-     * Kept for backwards compatibility, but deprecated
-     *
-     * @param mpqArchive a MPQ archive file.
-     */
-    @Deprecated("")
-    constructor(mpqArchive: File) : this(mpqArchive.toPath(), MPQOpenOption.FORCE_V0)
 
     @Throws(IOException::class)
     private fun checkLegacyCompat() {
@@ -341,14 +331,14 @@ class MPQ4J {
      */
     private fun checkListfileCompleteness(hiddenFiles: Int) {
         if (listFile!!.files.size <= blockTable!!.allVaildBlocks.size - hiddenFiles) {
-            log.warn("mpq's listfile is incomplete. Blocks without listfile entry will be discarded")
+            println("🔥 mpq's listfile is incomplete. Blocks without listfile entry will be discarded")
         }
         for (fileName in listFile!!.files) {
             if (!hasFile(fileName)) {
-                log.warn("listfile entry does not exist in archive and will be discarded: $fileName")
+                println("🔥 listfile entry does not exist in archive and will be discarded: $fileName")
             }
         }
-        listFile!!.fileMap.entries.removeIf { file: MutableMap.MutableEntry<Long?, String?>? -> !hasFile(file!!.value) }
+        listFile!!.fileMap.entries.removeIf { file: MutableMap.MutableEntry<Long, String>? -> !hasFile(file!!.value) }
     }
 
     @Throws(IOException::class)
@@ -578,8 +568,6 @@ class MPQ4J {
         }
         if (hasFile("(listfile)") && listFile != null) {
             for (s in listFile!!.files) {
-                if (s == null) continue
-
                 val normalized = if (File.separatorChar == '\\') s else s.replace("\\", File.separator)
                 log.debug("extracting: $normalized")
                 val temp = File(dest.absolutePath + File.separator + normalized)
@@ -662,7 +650,7 @@ class MPQ4J {
         }
     }
 
-    fun hasFile(name: String?): Boolean = hashTable!!.getBlockIndexOfFile(name) >= 0
+    fun hasFile(name: String): Boolean = hashTable!!.getBlockIndexOfFile(name) >= 0
 
     val fileNames: MutableList<String?>
         /**
@@ -754,7 +742,7 @@ class MPQ4J {
      *
      * @param name of the file inside the mpq
      */
-    fun deleteFile(name: String?) {
+    fun deleteFile(name: String) {
         if (!this.isCanWrite) {
             throw NonWritableChannelException()
         }
@@ -766,8 +754,7 @@ class MPQ4J {
     }
 
     @JvmOverloads
-    @Throws(NonWritableChannelException::class, IllegalArgumentException::class)
-    fun insertByteArray(name: String?, input: ByteArray, override: Boolean = false) {
+    fun insertByteArray(name: String, input: ByteArray, override: Boolean = false) {
         if (!this.isCanWrite) {
             throw NonWritableChannelException()
         }
@@ -782,14 +769,11 @@ class MPQ4J {
     /**
      * Inserts the specified file into the mpq once you close the editor.
      */
-    @JvmOverloads
-    @Throws(IOException::class, IllegalArgumentException::class)
-    fun insertFile(name: String?, file: File, override: Boolean = false) {
+    fun insertFile(name: String, file: File, override: Boolean = false) {
         if (!this.isCanWrite) {
             throw NonWritableChannelException()
         }
-
-        log.info("insert file: $name")
+        println("⬆️ insert file: $name")
 
         require(!((!override) && listFile!!.containsFile(name))) { "Archive already contains file with name: $name" }
 
@@ -800,10 +784,6 @@ class MPQ4J {
         } catch (e: IOException) {
             throw Exception(e)
         }
-    }
-
-    fun closeReadOnly() {
-        fc.close()
     }
 
     fun close() {
@@ -858,7 +838,7 @@ class MPQ4J {
                 calcNewTableSize()
 
                 val newBlocks = mutableListOf<BlockTable.Block?>()
-                val newFiles = mutableListOf<String?>()
+                val newFiles = mutableListOf<String>()
                 val existingFiles = listFile!!.files
 
                 sortListfileEntries(existingFiles)
@@ -874,7 +854,6 @@ class MPQ4J {
                 }
 
                 for (existingName in existingFiles) {
-                    if (existingName == null) continue
                     if (options.recompress && !existingName.endsWith(".wav")) {
                         val extracted = ByteBuffer.wrap(extractFileAsBytes(existingName))
                         filenameToData.put(existingName, extracted)
@@ -899,6 +878,7 @@ class MPQ4J {
                 log.debug("Added existing files")
                 val newFileMap = HashMap<String?, ByteBuffer?>()
                 for (newFileName in filenameToData) {
+                    if (newFileName == null) continue
                     val newFile: ByteBuffer = filenameToData.get(newFileName)!!
                     newFiles.add(newFileName)
                     newFileMap.put(newFileName, newFile)
@@ -978,6 +958,7 @@ class MPQ4J {
                 val hashTable = HashTable(hashSize)
                 var blockIndex = 0
                 for (file in newFiles) {
+
                     hashTable.setFileBlockIndex(file, HashTable.DEFAULT_LOCALE, blockIndex++)
                 }
 
@@ -1024,11 +1005,11 @@ class MPQ4J {
         log.debug("Rebuild complete. Took: " + (t / 1000000) + "ms")
     }
 
-    private fun sortListfileEntries(remainingFiles: MutableList<String?>?) {
+    private fun sortListfileEntries(remainingFiles: MutableList<String>?) {
         if (remainingFiles == null) return
 
         // Sort entries to preserve block table order
-        remainingFiles.sortWith<String?>(Comparator { o1: String?, o2: String? ->
+        remainingFiles.sortWith<String>(Comparator { o1: String, o2: String ->
             var pos1 = 999999999
             var pos2 = 999999999
             try {

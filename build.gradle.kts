@@ -32,13 +32,17 @@ jacoco {
 
 dependencies {
     implementation("com.jcraft:jzlib:1.1.3")
-    implementation("org.apache.commons:commons-compress:1.24.0")
+    implementation("org.apache.commons:commons-compress:1.26.0")
     implementation("com.github.eustas:CafeUndZopfli:5cdf283e67")
     implementation("org.tukaani:xz:1.9")
+
     implementation("org.slf4j:slf4j-api:1.7.31")
-    implementation("ch.qos.logback:logback-classic:1.4.11")
+    implementation("ch.qos.logback:logback-classic:1.4.12")
     testImplementation("org.testng:testng:7.8.0")
+
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+    testImplementation(kotlin("test"))
+    testImplementation("org.junit.jupiter:junit-jupiter:5.8.1")
 }
 
 tasks.test {

@@ -66,7 +66,7 @@ class AttributesFile {
         return crc32.size
     }
 
-    fun setNames(names: MutableList<String?>) {
+    fun setNames(names: MutableList<String>) {
         var i = 0
         for (name in names) {
             refMap.put(name, i)

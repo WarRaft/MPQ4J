@@ -5,7 +5,7 @@ import java.nio.charset.StandardCharsets
 import java.util.Scanner
 
 class Listfile {
-    val fileMap: java.util.HashMap<Long?, String?> = HashMap<Long?, String?>()
+    val fileMap: java.util.HashMap<Long, String> = HashMap<Long, String>()
 
     constructor(file: ByteArray) {
         val list = String(file, StandardCharsets.UTF_8)
@@ -18,22 +18,22 @@ class Listfile {
 
     constructor()
 
-    val files: MutableList<String?>
+    val files: MutableList<String>
         get() = this.fileMap.values.toMutableList()
 
-    fun addFile(name: String?) {
+    fun addFile(name: String) {
         val key = HashTable.calculateFileKey(name)
-        if (name != null && !name.isEmpty() && !this.fileMap.containsKey(key)) {
+        if (!name.isEmpty() && !this.fileMap.containsKey(key)) {
             this.fileMap.put(key, name)
         }
     }
 
-    fun removeFile(name: String?) {
+    fun removeFile(name: String) {
         val key = HashTable.calculateFileKey(name)
         this.fileMap.remove(key)
     }
 
-    fun containsFile(name: String?): Boolean {
+    fun containsFile(name: String): Boolean {
         val key = HashTable.calculateFileKey(name)
         return fileMap.containsKey(key)
     }
