@@ -3,6 +3,7 @@ package systems.crigges.jmpq3;
 import java.util.*;
 
 /**
+ *
  */
 public class LinkedIdentityHashMap<K, V> extends IdentityHashMap<K, V> implements Iterable<K> {
 
@@ -12,11 +13,6 @@ public class LinkedIdentityHashMap<K, V> extends IdentityHashMap<K, V> implement
     public LinkedIdentityHashMap() {
     }
 
-    public LinkedIdentityHashMap(int expectedMaxSize) {
-        super(expectedMaxSize);
-    }
-
-    @Override
     public V put(K key, V value) {
         final V oldValue = super.put(key, value);
         if (oldValue == null) {

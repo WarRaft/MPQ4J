@@ -1,37 +1,37 @@
-package systems.crigges.jmpq3;
+package systems.crigges.jmpq3
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import java.io.ByteArrayOutputStream
+import java.io.IOException
+import kotlin.math.min
 
-public class DebugHelper {
-    protected static final char[] hexArray = "0123456789ABCDEF".toCharArray();
+object DebugHelper {
+    internal val hexArray: CharArray = "0123456789ABCDEF".toCharArray()
 
-    public static String bytesToHex(byte[] bytes) {
-        char[] hexChars = new char[bytes.length * 3];
-        for (int j = 0; j < Math.min(bytes.length, 500); j++) {
-            int v = bytes[j] & 0xFF;
-            hexChars[(j * 3)] = hexArray[(v >>> 4)];
-            hexChars[(j * 3 + 1)] = hexArray[(v & 0xF)];
-            hexChars[(j * 3 + 2)] = ' ';
+    fun bytesToHex(bytes: ByteArray): String {
+        val hexChars = CharArray(bytes.size * 3)
+        for (j in 0..<min(bytes.size.toDouble(), 500.0).toInt()) {
+            val v = bytes[j].toInt() and 0xFF
+            hexChars[(j * 3)] = hexArray[(v ushr 4)]
+            hexChars[(j * 3 + 1)] = hexArray[(v and 0xF)]
+            hexChars[(j * 3 + 2)] = ' '
         }
-        return new String(hexChars).trim();
+        return String(hexChars).trim { it <= ' ' }
     }
 
-    public static byte[] appendData(byte firstObject,byte[] secondObject){
-        byte[] byteArray= {firstObject};
-        return appendData(byteArray,secondObject);
+    @JvmStatic
+    fun appendData(firstObject: Byte, secondObject: ByteArray?): ByteArray? {
+        val byteArray = byteArrayOf(firstObject)
+        return appendData(byteArray, secondObject)
     }
 
-    public static byte[] appendData(byte[] firstObject,byte[] secondObject){
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
+    fun appendData(firstObject: ByteArray?, secondObject: ByteArray?): ByteArray? {
+        val outputStream = ByteArrayOutputStream()
         try {
-            if (firstObject!=null && firstObject.length!=0)
-                outputStream.write(firstObject);
-            if (secondObject!=null && secondObject.length!=0)
-                outputStream.write(secondObject);
-        } catch (IOException e) {
-            e.printStackTrace();
+            if (firstObject != null && firstObject.isNotEmpty()) outputStream.write(firstObject)
+            if (secondObject != null && secondObject.isNotEmpty()) outputStream.write(secondObject)
+        } catch (e: IOException) {
+            e.printStackTrace()
         }
-        return outputStream.toByteArray();
+        return outputStream.toByteArray()
     }
 }

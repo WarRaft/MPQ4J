@@ -465,8 +465,6 @@ class MPQ4J {
                 // MPQ user data header with redirect to MPQ header
                 // ignore in legacy compatibility mode
 
-                // TODO process these in some meaningful way
-
                 probe.rewind()
                 fc.position(filePos + 8)
                 readFully(probe, fc)
@@ -506,7 +504,6 @@ class MPQ4J {
 
         // version 1 extension
         if (formatVersion >= 1) {
-            // TODO add high block table support
             buffer.getLong()
 
             // high 16 bits of file pos
@@ -518,15 +515,12 @@ class MPQ4J {
         if (formatVersion >= 2) {
             // 64 bit archive size
             archiveSize = buffer.getLong()
-
-            // TODO add support for BET and HET tables
             buffer.getLong()
             buffer.getLong()
         }
 
         // version 3 extension
         if (formatVersion >= 3) {
-            // TODO add support for compression and checksums
             buffer.getLong()
             buffer.getLong()
             buffer.getLong()
@@ -558,8 +552,6 @@ class MPQ4J {
         buffer.putInt(newBlockPos.toInt())
         buffer.putInt(newHashSize)
         buffer.putInt(newBlockSize)
-
-        // TODO add full write support for versions above 1
     }
 
     /**
@@ -643,7 +635,7 @@ class MPQ4J {
      * @param name name of the file
      * @param dest destination to that the files content is written
      */
-    fun extractFile(name: String, dest: File?) {
+    fun extractFile(name: String, dest: File) {
         try {
             val f = getMpqFile(name)
             f.extractToFile(dest)
@@ -687,7 +679,7 @@ class MPQ4J {
      * @param name name of the file
      * @param dest the outputstream where the file's content is written
      */
-    fun extractFile(name: String, dest: OutputStream?) {
+    fun extractFile(name: String, dest: OutputStream) {
         try {
             val f = getMpqFile(name)
             f.extractToOutputStream(dest)
