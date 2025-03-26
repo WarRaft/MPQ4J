@@ -141,9 +141,8 @@ public class HashTable {
      *
      * @param name file path name.
      * @return block table index.
-     * @throws IOException if the specified file has no mapping.
      */
-    public int getBlockIndexOfFile(String name) throws Exception {
+    public int getBlockIndexOfFile(String name) {
         return getFileBlockIndex(name, DEFAULT_LOCALE);
     }
 
@@ -158,9 +157,8 @@ public class HashTable {
      * @param name   file path name.
      * @param locale file locale.
      * @return block table index.
-     * @throws IOException if the specified file has no mapping.
      */
-    public int getFileBlockIndex(String name, short locale) throws Exception {
+    public int getFileBlockIndex(String name, short locale) {
         final FileIdentifier fid = new FileIdentifier(name, locale);
         Bucket entry = getFileEntry(fid);
 

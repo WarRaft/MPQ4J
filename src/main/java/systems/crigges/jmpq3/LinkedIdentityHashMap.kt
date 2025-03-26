@@ -1,76 +1,69 @@
-package systems.crigges.jmpq3;
+package systems.crigges.jmpq3
 
-import java.util.*;
+import java.util.*
 
 /**
  *
  */
-public class LinkedIdentityHashMap<K, V> extends IdentityHashMap<K, V> implements Iterable<K> {
+class LinkedIdentityHashMap<K, V> : IdentityHashMap<K?, V?>(), Iterable<K?> {
+    private val order = LinkedList<K?>()
 
-    private static final long serialVersionUID = -3556728339380493443L;
-    private final LinkedList<K> order = new LinkedList<K>();
-
-    public LinkedIdentityHashMap() {
-    }
-
-    public V put(K key, V value) {
-        final V oldValue = super.put(key, value);
+    override fun put(key: K?, value: V?): V? {
+        val oldValue = super.put(key, value)
         if (oldValue == null) {
             if (value != null) {
-                order.add(key);
+                order.add(key)
             }
         } else {
             if (value == null) {
-                order.remove(key);
+                order.remove(key)
             }
         }
-        return oldValue;
+        return oldValue
     }
 
-    public Iterator<K> iterator() {
-        return order.iterator();
+    override fun iterator(): MutableIterator<K?> {
+        return order.iterator()
     }
 
-    public K first() {
-        return order.getFirst();
+    fun first(): K? {
+        return order.first()
     }
 
-    public K last() {
-        return order.getLast();
+    fun last(): K? {
+        return order.last()
     }
 
-    @Override
-    public boolean equals(Object other) {
-        if (other instanceof LinkedIdentityHashMap) {
-            final LinkedIdentityHashMap map = (LinkedIdentityHashMap) other;
-            if (order.size() != map.order.size()) {
-                return false;
+    override fun equals(other: Any?): Boolean {
+        if (other is LinkedIdentityHashMap<*, *>) {
+            val map = other
+            if (order.size != map.order.size) {
+                return false
             }
-            final Iterator iterator = map.order.iterator();
-            for (K key : order) {
-                if (key != iterator.next() || !get(key).equals(map.get(key))) {
-                    return false;
+            val iterator: MutableIterator<*> = map.order.iterator()
+            for (key in order) {
+                if (key !== iterator.next() || get(key) != map[key]) {
+                    return false
                 }
             }
-            return true;
+            return true
         }
-        return false;
+        return false
     }
 
-    @Override
-    public int hashCode() {
-        return order.hashCode();
+    override fun hashCode(): Int {
+        return order.hashCode()
     }
 
-    @Override
-    public boolean remove(Object key, Object value) {
-        order.remove(key);
-        return super.remove(key, value);
+
+    override fun remove(key: K?, value: V?): Boolean {
+        order.remove(key)
+        return super.remove(key, value)
     }
 
-    @Override
-    public V remove(Object key) {
-        order.remove(key);
-        return super.remove(key);
+    override fun remove(key: K?): V? {
+        order.remove(key)
+        return super.remove(key)
     }
+
 }
