@@ -61,7 +61,7 @@ object CompressionUtil {
                 throw Exception("Unsupported compression Bzip2")
             } else if (isImploded) {
                 val output = ByteArray(uncompressedSize)
-                Exploder.pkexplode(sector, output, 1)
+                Exploder(sector, output, 1)
                 out.put(output)
                 out.position(0)
                 flip = !flip
@@ -110,7 +110,7 @@ object CompressionUtil {
             val out = ByteBuffer.wrap(ByteArray(uncompressedSize))
 
             val output = ByteArray(uncompressedSize)
-            Exploder.pkexplode(sector, output, 0)
+            Exploder(sector, output, 0)
             out.put(output)
             out.position(0)
             return out.array()

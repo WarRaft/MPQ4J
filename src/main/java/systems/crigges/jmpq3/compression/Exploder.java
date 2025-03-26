@@ -20,14 +20,15 @@ package systems.crigges.jmpq3.compression;
 import static systems.crigges.jmpq3.compression.Explorer1.*;
 
 public class Exploder {
-    public static void pkexplode(byte[] pInBuffer, byte[] pOutBuffer, int inPos) {
+
+
+    public Exploder(byte[] pInBuffer, byte[] pOutBuffer, int inPos) {
         // Compressed data cannot be less than 4 bytes;
         // this is not possible in any case whatsoever
         if (pInBuffer.length < 4) {
             throw new IllegalArgumentException("PK_ERR_INCOMPLETE_INPUT: Incomplete input");
         }
 
-        int pOutPos = 0;
         // This is 1 because in an mpq-sector, the first byte is the compression type flag
         int pInPos = inPos;
 
@@ -69,6 +70,7 @@ public class Exploder {
         // Decompress until output buffer is full
         int i; // Index into tables
         int nCopyLen;
+        int pOutPos = 0;
         while (pOutPos < pOutBuffer.length) {
 
             // Fill bit buffer with at least 16 bits
