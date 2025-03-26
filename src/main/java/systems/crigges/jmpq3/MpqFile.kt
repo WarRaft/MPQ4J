@@ -279,12 +279,12 @@ class MpqFile(
      * @return the byte[]
      */
     @Throws(Exception::class)
-    private fun decompressSector(sector: ByteArray?, normalSize: Int, uncompressedSize: Int): ByteArray {
+    private fun decompressSector(sector: ByteArray, normalSize: Int, uncompressedSize: Int): ByteArray {
         return CompressionUtil.decompress(sector, normalSize, uncompressedSize)
     }
 
     @Throws(Exception::class)
-    private fun decompressImplodedSector(sector: ByteArray?, normalSize: Int, uncompressedSize: Int): ByteArray {
+    private fun decompressImplodedSector(sector: ByteArray, normalSize: Int, uncompressedSize: Int): ByteArray {
         return CompressionUtil.explode(sector, normalSize, uncompressedSize)
     }
 
