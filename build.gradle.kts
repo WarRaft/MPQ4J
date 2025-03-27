@@ -1,6 +1,4 @@
 plugins {
-    java
-
     id("idea")
     id("maven-publish")
 

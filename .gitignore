@@ -1,5 +1,8 @@
+**/.DS_Store
 .gradle
 build/
 out/
 src/test/resources/mpqs/War3x.w3x
 src/test/resources/War3x.w3x
+/.kotlin/
+/gradlew.bat
