@@ -314,7 +314,7 @@ class MPQ4J {
      * @param hiddenFiles Num. hidden files
      */
     private fun checkListfileCompleteness(hiddenFiles: Int) {
-        if (listFile!!.files.size <= blockTable!!.allVaildBlocks.size - hiddenFiles) {
+        if (listFile!!.files.size != blockTable!!.allVaildBlocks.size - hiddenFiles) {
             println("🔥 mpq's listfile is incomplete. Blocks without listfile entry will be discarded")
         }
         for (fileName in listFile!!.files) {
@@ -729,7 +729,6 @@ class MPQ4J {
         }
     }
 
-    @JvmOverloads
     fun insertByteArray(name: String, input: ByteArray, override: Boolean = false) {
         if (!this.isCanWrite) {
             throw NonWritableChannelException()

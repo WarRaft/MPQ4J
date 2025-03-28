@@ -149,11 +149,11 @@ class HashTable(capacity: Int) {
         val entry = getFileEntry(fid)
 
         if (entry == null) {
-            println("File Not Found <$name>.")
-            return -1
+            //println("File Not Found <$name>.")
+            return -100500
         } else if (entry.blockTableIndex < 0) {
-            println("File has invalid block table index <" + entry.blockTableIndex + ">.")
-            return -1
+            //println("File has invalid block table index <" + entry.blockTableIndex + ">.")
+            return -100500
         }
 
         return entry.blockTableIndex
